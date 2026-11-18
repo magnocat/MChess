@@ -23,6 +23,7 @@ export class SceneManager {
     this.container = container;
     this.onSquareClick = onSquareClick;
     this.lowQuality = /Mobi|Android/i.test(navigator.userAgent);
+    this.specialMode = !this.lowQuality;
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(
@@ -109,6 +110,10 @@ export class SceneManager {
     if (this.lowQuality) {
       this.clearEndEffects();
     }
+  }
+
+  setSpecialMode(enabled) {
+    this.specialMode = Boolean(enabled);
   }
 
   buildBoardSquares(seed) {
@@ -256,7 +261,7 @@ export class SceneManager {
     if (attacker) {
       await this.animator.animateMove(attacker, targetPos, moveObj.piece === 'n');
       if (moveObj.captured && defender) {
-        await this.animator.animateCombat(attacker, defender);
+        await this.animator.animateCombat(attacker, defender, this.specialMode && !this.lowQuality);
       }
     }
 

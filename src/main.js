@@ -93,6 +93,8 @@ async function bootstrap() {
   sceneManager.setColorPalette(a11y.getPalette());
   const lowQualityChk = document.getElementById('chk-low-quality');
   if (lowQualityChk) lowQualityChk.checked = sceneManager.lowQuality;
+  const specialModeChk = document.getElementById('chk-special-mode');
+  if (specialModeChk) specialModeChk.checked = sceneManager.specialMode;
 
   const p2p = new P2PManager({
     onStatus: (msg, url) => {
@@ -546,7 +548,17 @@ async function bootstrap() {
   document.getElementById('btn-cam-top').addEventListener('click', () => sceneManager.setCameraPreset('top'));
   document.getElementById('chk-low-quality').addEventListener('change', (ev) => {
     sceneManager.setLowQuality(ev.target.checked);
+    if (ev.target.checked && specialModeChk) {
+      specialModeChk.checked = false;
+      sceneManager.setSpecialMode(false);
+    }
   });
+  if (specialModeChk) {
+    specialModeChk.addEventListener('change', (ev) => {
+      sceneManager.setSpecialMode(ev.target.checked);
+      showSubtitle(ev.target.checked ? 'Modo Especial ativado: finalizações exclusivas!' : 'Modo Especial desativado.');
+    });
+  }
 
   document.getElementById('btn-copy-hwid').addEventListener('click', async () => {
     if (navigator.clipboard) {
