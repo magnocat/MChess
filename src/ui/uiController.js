@@ -264,26 +264,11 @@ export class UIController {
         body.append(table);
       }
 
-      const row = this.el('div', '', 'btn-row');
-      const btnExport = this.el('button', 'Exportar Mural (.TXT)', 'primary');
-      btnExport.addEventListener('click', () => {
-        downloadTxtFile('mchess-mural.txt', scoreboard.exportTxt());
-      });
-
-      const importLabel = this.el('label', 'Importar Mural (.TXT):');
-      const fileInput = this.el('input');
-      fileInput.type = 'file';
-      fileInput.accept = '.txt,text/plain';
-      fileInput.addEventListener('change', async (ev) => {
-        const file = ev.target.files?.[0];
-        if (!file) return;
-        const text = await file.text();
-        scoreboard.importTxt(text);
-        this.openScoreboardModal(scoreboard);
-      });
-
-      row.append(btnExport);
-      body.append(row, importLabel, fileInput);
+      const infoGlobal = this.el(
+        'p',
+        'Classificação global de jogadores humanos. Vitória: 3 pts | Empate: 1 pt.',
+      );
+      body.append(infoGlobal);
     });
   }
 
@@ -308,25 +293,56 @@ export class UIController {
         return;
       }
 
-      const status = this.el('p', 'Sessão ADMIN ativa.');
-      const btnExportProfile = this.el('button', 'Exportar Perfil IA (.TXT)');
-      const btnClearBoard = this.el('button', 'Limpar Mural de Pontuação', 'danger');
-      const btnLogout = this.el('button', 'Sair do Modo ADMIN');
+      const status = this.el('p', 'Sessão ADMIN ativa e verificada.');
 
+      const agentLink = this.el('a', 'Abrir Modo Agente (WebMCP)', 'btn-link primary');
+      agentLink.href = './agent.html';
+
+      const btnExportMural = this.el('button', 'Exportar Mural Global (.TXT)', 'primary');
+      btnExportMural.addEventListener('click', () => {
+        downloadTxtFile('mural-global.txt', scoreboard.exportTxt());
+      });
+
+      const importLabel = this.el('label', 'Importar Mural (.TXT):');
+      const fileInput = this.el('input');
+      fileInput.type = 'file';
+      fileInput.accept = '.txt,text/plain';
+      fileInput.addEventListener('change', async (ev) => {
+        const file = ev.target.files?.[0];
+        if (!file) return;
+        const text = await file.text();
+        scoreboard.importTxt(text);
+        status.textContent = 'Mural importado com sucesso.';
+      });
+
+      const btnExportProfile = this.el('button', 'Exportar Perfil IA (.TXT)');
       btnExportProfile.addEventListener('click', () => {
         downloadTxtFile('mchess-ia-profile.txt', profileManager.exportTxt());
       });
+
+      const btnClearBoard = this.el('button', 'Limpar Mural de Pontuação', 'danger');
       btnClearBoard.addEventListener('click', () => {
         scoreboard.clearAll();
         onResetAll();
         status.textContent = 'Mural limpo com sucesso.';
       });
+
+      const btnLogout = this.el('button', 'Sair do Modo ADMIN');
       btnLogout.addEventListener('click', () => {
         adminAuth.logout();
         this.closeModal();
       });
 
-      body.append(status, btnExportProfile, btnClearBoard, btnLogout);
+      body.append(
+        status,
+        agentLink,
+        btnExportMural,
+        importLabel,
+        fileInput,
+        btnExportProfile,
+        btnClearBoard,
+        btnLogout,
+      );
     });
   }
 

@@ -108,17 +108,15 @@ export class ScoreboardManager {
     this.save();
   }
 
-  importTxt(rawText) {
-    const parsed = parseSafeTxtPayload(rawText);
-    if (!Array.isArray(parsed.entries)) {
-      throw new Error('Arquivo de mural inválido.');
-    }
-    for (const item of parsed.entries) {
+  mergeEntries(entries) {
+    if (!Array.isArray(entries)) return;
+    for (const item of entries) {
       if (!item || !item.shortId) continue;
-      const existing = this.entries.find((e) => e.shortId === item.shortId);
+      const cleanId = sanitizeText(item.shortId, 16);
+      const existing = this.entries.find((e) => e.shortId === cleanId);
       if (!existing) {
         this.entries.push({
-          shortId: sanitizeText(item.shortId, 16),
+          shortId: cleanId,
           playerName: sanitizeText(item.playerName, 32) || 'Jogador',
           games: Number(item.games) || 0,
           moves: Number(item.moves) || 0,
@@ -129,9 +127,41 @@ export class ScoreboardManager {
           elo: Number(item.elo) || 800,
           updatedAt: item.updatedAt || new Date().toISOString(),
         });
+      } else if ((Number(item.points) || 0) > existing.points || (Number(item.moves) || 0) > (existing.moves || 0)) {
+        existing.playerName = sanitizeText(item.playerName, 32) || existing.playerName;
+        existing.games = Math.max(existing.games || 0, Number(item.games) || 0);
+        existing.moves = Math.max(existing.moves || 0, Number(item.moves) || 0);
+        existing.wins = Math.max(existing.wins, Number(item.wins) || 0);
+        existing.losses = Math.max(existing.losses, Number(item.losses) || 0);
+        existing.draws = Math.max(existing.draws, Number(item.draws) || 0);
+        existing.points = Math.max(existing.points, Number(item.points) || 0);
+        existing.elo = Math.max(existing.elo, Number(item.elo) || 800);
       }
     }
     this.sortAndSave();
+  }
+
+  async syncFromGlobalTxt() {
+    try {
+      if (typeof fetch !== 'function') return;
+      const res = await fetch('./data/mural-global.txt', { cache: 'no-store' });
+      if (!res.ok) return;
+      const text = await res.text();
+      const parsed = parseSafeTxtPayload(text);
+      if (Array.isArray(parsed.entries)) {
+        this.mergeEntries(parsed.entries);
+      }
+    } catch {
+      // Silencioso quando offline
+    }
+  }
+
+  importTxt(rawText) {
+    const parsed = parseSafeTxtPayload(rawText);
+    if (!Array.isArray(parsed.entries)) {
+      throw new Error('Arquivo de mural inválido.');
+    }
+    this.mergeEntries(parsed.entries);
   }
 
   getTopEntries(limit = 20) {

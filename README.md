@@ -7,15 +7,14 @@
 Jogo de xadrez 3D open-source, gratuito e executável direto no navegador.
 Desenvolvido com foco em leveza, segurança, acessibilidade e padrão de escrita **ASD-STE100 (PT-BR)**.
 
-> *Projeto criado com dedicação por um pai presente para seu filho, **Miguel Magno**, durante sua jornada de aprendizado no xadrez.*
+> *© 2026 MagnoCat — Criado por [**MagnoCat**](https://github.com/magnocat) com dedicação para seu filho, **Miguel Magno**, durante sua jornada de aprendizado no xadrez.*
 
 ---
 
 ## 🌐 Acesso Rápido
 
 - **Jogar Online (3D):** https://magnocat.github.io/MChess/
-- **Modo Agente (WebMCP / Leve):** https://magnocat.github.io/MChess/agent.html
-- **Repositório:** https://github.com/magnocat/MChess
+- **Criador:** https://github.com/magnocat
 
 ---
 

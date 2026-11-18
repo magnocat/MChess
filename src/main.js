@@ -35,8 +35,17 @@ async function bootstrap() {
 
   const profileManager = new PlayerProfileManager(hwidHash);
   const scoreboard = new ScoreboardManager();
+  scoreboard.syncFromGlobalTxt();
   const adminAuth = new AdminAuthManager();
   const ui = new UIController();
+
+  // Atualiza automaticamente o período de copyright a partir de 2026
+  const copyrightEl = document.getElementById('copyright-period');
+  if (copyrightEl) {
+    const startYear = 2026;
+    const currentYear = new Date().getFullYear();
+    copyrightEl.textContent = currentYear > startYear ? `${startYear}–${currentYear}` : `${startYear}`;
+  }
 
   let selectedSquare = null;
   let legalMovesForSelected = [];
@@ -52,7 +61,11 @@ async function bootstrap() {
         ui.openP2PModal({
           inviteUrl: url,
           statusText: msg,
-          onCreateRoom: () => p2p.hostRoom(gameState.serialize(hwidHash)),
+          onCreateRoom: () =>
+            p2p.hostRoom({
+              ...gameState.serialize(hwidHash),
+              scoreboardEntries: scoreboard.getTopEntries(20),
+            }),
         });
       }
     },
@@ -60,6 +73,10 @@ async function bootstrap() {
       gameState.mode = '1v1-p2p';
       gameState.humanColor = isHost ? 'w' : 'b';
       sceneManager.setCameraPreset(gameState.humanColor);
+      p2p.send({
+        type: 'SYNC',
+        payload: { scoreboardEntries: scoreboard.getTopEntries(20) },
+      });
       ui.closeModal();
       updateHud();
     },
@@ -67,8 +84,13 @@ async function bootstrap() {
       await applyMove(from, to, promotion, true);
     },
     onSync: (snapshot) => {
-      gameState.restore(snapshot);
-      loadWorldAndSync();
+      if (Array.isArray(snapshot.scoreboardEntries)) {
+        scoreboard.mergeEntries(snapshot.scoreboardEntries);
+      }
+      if (snapshot.fen) {
+        gameState.restore(snapshot);
+        loadWorldAndSync();
+      }
     },
     onDisconnected: () => {
       subtitleEl.textContent = 'Oponente P2P desconectou.';
