@@ -386,6 +386,8 @@ async function bootstrap() {
           if (payload.hwidHash) {
             hwidHash = setActiveHwidHash(payload.hwidHash);
             profileManager.setHwid(hwidHash);
+            a11y.setHwid(hwidHash);
+            sceneManager.setColorPalette(a11y.getPalette());
           }
           gameState.restore(payload);
           loadWorldAndSync();
@@ -397,6 +399,8 @@ async function bootstrap() {
       onRecoverHash: (newHash) => {
         hwidHash = setActiveHwidHash(newHash);
         profileManager.setHwid(hwidHash);
+        a11y.setHwid(hwidHash);
+        sceneManager.setColorPalette(a11y.getPalette());
         const saved = loadMatchTxt(hwidHash);
         if (saved) {
           gameState.restore(saved);

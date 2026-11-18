@@ -65,6 +65,15 @@ export function createPieceMaterials() {
   };
 }
 
+export function applyPiecePalette(materials, palette) {
+  if (!materials || !palette?.pieceColors) return;
+  for (const [key, hex] of Object.entries(palette.pieceColors)) {
+    if (materials[key] && typeof hex === 'number') {
+      materials[key].color.setHex(hex);
+    }
+  }
+}
+
 function getRoleAccentMaterial(type, color, materials) {
   const isW = color === 'w';
   switch (type) {

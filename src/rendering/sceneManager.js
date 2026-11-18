@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { buildLivingPiece, createPieceMaterials } from '../characters/pieceBuilder.js';
+import { applyPiecePalette, buildLivingPiece, createPieceMaterials } from '../characters/pieceBuilder.js';
 import { PieceAnimator } from '../characters/pieceAnimator.js';
 import { getBiomeForSeed, ProceduralWorld } from './proceduralWorld.js';
 
@@ -78,6 +78,7 @@ export class SceneManager {
   setColorPalette(palette) {
     if (!palette) return;
     this.colorPalette = palette;
+    applyPiecePalette(this.pieceMaterials, palette);
     this.buildBoardSquares(this.currentSeed);
   }
 
