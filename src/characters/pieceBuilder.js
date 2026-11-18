@@ -49,9 +49,38 @@ export function createPieceMaterials() {
       roughness: 0.35,
       metalness: 0.5,
     }),
+    // Cores distintas para Rei, Rainha e peças chave
+    kingW: new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.22, metalness: 0.85 }),
+    kingB: new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.25, metalness: 0.8 }),
+    queenW: new THREE.MeshStandardMaterial({ color: 0xa855f7, roughness: 0.28, metalness: 0.6 }),
+    queenB: new THREE.MeshStandardMaterial({ color: 0xc026d3, roughness: 0.3, metalness: 0.6 }),
+    bishopW: new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.32, metalness: 0.55 }),
+    bishopB: new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.32, metalness: 0.55 }),
+    knightW: new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.38, metalness: 0.5 }),
+    knightB: new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.38, metalness: 0.5 }),
+    rookW: new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.35, metalness: 0.65 }),
+    rookB: new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.35, metalness: 0.65 }),
     eyeW: new THREE.MeshBasicMaterial({ color: 0x38bdf8 }),
     eyeB: new THREE.MeshBasicMaterial({ color: 0xf97316 }),
   };
+}
+
+function getRoleAccentMaterial(type, color, materials) {
+  const isW = color === 'w';
+  switch (type) {
+    case 'k':
+      return isW ? materials.kingW : materials.kingB;
+    case 'q':
+      return isW ? materials.queenW : materials.queenB;
+    case 'b':
+      return isW ? materials.bishopW : materials.bishopB;
+    case 'n':
+      return isW ? materials.knightW : materials.knightB;
+    case 'r':
+      return isW ? materials.rookW : materials.rookB;
+    default:
+      return isW ? materials.wAccent : materials.bAccent;
+  }
 }
 
 /**
@@ -64,7 +93,7 @@ export function createPieceMaterials() {
 export function buildLivingPiece(type, color, materials) {
   const root = new THREE.Group();
   const mainMat = materials[color];
-  const accentMat = color === 'w' ? materials.wAccent : materials.bAccent;
+  const accentMat = getRoleAccentMaterial(type, color, materials);
   const eyeMat = color === 'w' ? materials.eyeW : materials.eyeB;
 
   const base = new THREE.Mesh(SHARED_GEO.base, mainMat);
@@ -259,8 +288,8 @@ export function buildLivingPiece(type, color, materials) {
     body.add(rightArm);
   }
 
-  // Face das peças brancas olha para +Z e pretas para -Z
-  root.rotation.y = color === 'w' ? 0 : Math.PI;
+  // Face das peças brancas olha para -Z (frente do tabuleiro) e pretas para +Z
+  root.rotation.y = color === 'w' ? Math.PI : 0;
   root.traverse((child) => {
     if (child.isMesh) {
       child.castShadow = true;

@@ -18,10 +18,11 @@ As preferências ficam salvas no HWID do jogador e aplicadas no tabuleiro 3D e n
 
 Ative **Modo Narrado para Cegos** no menu **Acessibilidade** para jogar apenas com o teclado e áudio:
 
-- **Setas ou WASD:** Move o cursor pelas casas (`a1` até `h8`) e narra a peça e lances possíveis.
+- **Setas (ou W, A, S e Shift+D):** Move o cursor pelas casas (`a1` até `h8`) e narra a peça e lances possíveis.
 - **Enter ou Espaço:** Seleciona a peça ou executa o movimento na casa atual.
 - **Tecla D:** Descreve novamente a casa atual e suas capturas possíveis.
 - **Tecla T:** Informa de quem é o turno e se há xeque.
+- **Música Baixa:** Ao ativar o modo narrado, o volume da música cai automaticamente para 6% para não atrapalhar a voz. O jogador pode aumentar no menu **Áudio** quando quiser.
 
 ## 3. Privacidade e LGPD
 

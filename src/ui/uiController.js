@@ -305,7 +305,7 @@ export class UIController {
       chkRow.append(chk, this.el('span', 'Ativar narração de casas, peças e movimento por teclado'));
       const help = this.el(
         'p',
-        'Teclado: Setas ou WASD movem o cursor. Enter ou Espaço selecionam e movem. Tecla D descreve a casa. Tecla T informa o turno.',
+        'Comandos: Setas (ou W/A/S e Shift+D) movem o cursor. Enter ou Espaço selecionam e movem. D descreve a casa. T informa o turno. A música fica bem baixa automaticamente (ajustável em Áudio).',
       );
       blindCard.append(chkRow, help);
 
@@ -452,6 +452,61 @@ export class UIController {
         }
         body.append(row);
       });
+    });
+  }
+
+  pickGameOverAnnouncement(result, winnerLabel = '') {
+    const pools = {
+      win: [
+        `Vitória magistral! ${winnerLabel ? `${winnerLabel} dominou` : 'Você dominou'} o tabuleiro!`,
+        `Xeque-mate perfeito! O Rei adversário caiu diante da sua estratégia!`,
+        `Triunfo épico! Hoje a coroa do tabuleiro pertence a ${winnerLabel || 'você'}!`,
+        `Vitória brilhante! Cada lance construiu esse xeque-mate decisivo!`,
+        `Glória no reino! Uma partida vencida com coragem e precisão!`,
+        `Espetacular! Vitória conquistada do primeiro ao último movimento!`,
+      ],
+      loss: [
+        `Derrota honrosa! O Rei caiu, mas cada partida fortalece sua mente.`,
+        `Não foi desta vez! Analise os lances e volte ainda mais forte na revanche.`,
+        `O adversário levou a melhor hoje (${winnerLabel || 'xeque-mate'}). Que tal outra batalha?`,
+        `Xeque-mate sofrido! Grandes mestres também evoluem nas derrotas.`,
+        `Fim de combate! Levante a guarda e surpreenda na próxima abertura!`,
+      ],
+      draw: [
+        `Empate equilibrado! Nenhum dos reinos cedeu terreno.`,
+        `Paz no tabuleiro! A batalha terminou em igualdade absoluta.`,
+        `Empate técnico! Defesa e ataque se anularam até o fim.`,
+        `Divisão de honra! Ambos os lados lutaram até o último recurso.`,
+        `Resultado empatado! Uma disputa acirrada do início ao fim.`,
+      ],
+    };
+
+    const list = pools[result] || pools.draw;
+    let chosen = list[Math.floor(Math.random() * list.length)];
+    if (list.length > 1 && chosen === this.lastGameOverMsg) {
+      chosen = list[(list.indexOf(chosen) + 1) % list.length];
+    }
+    this.lastGameOverMsg = chosen;
+    return chosen;
+  }
+
+  openGameOverModal({ result, title, message, lowQuality, onNewGame }) {
+    this.openModal(title, (body) => {
+      const banner = this.el('div', '', `gameover-banner ${lowQuality ? '' : `fx-${result}`}`);
+      const msgEl = this.el('p', message, 'gameover-msg');
+      banner.append(msgEl);
+
+      const row = this.el('div', '', 'btn-row');
+      const btnNew = this.el('button', 'Jogar Novamente', 'primary');
+      btnNew.addEventListener('click', () => {
+        this.closeModal();
+        onNewGame();
+      });
+      const btnClose = this.el('button', 'Ver Tabuleiro');
+      btnClose.addEventListener('click', () => this.closeModal());
+      row.append(btnNew, btnClose);
+
+      body.append(banner, row);
     });
   }
 }

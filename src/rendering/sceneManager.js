@@ -69,6 +69,7 @@ export class SceneManager {
       boardDark: null,
     };
 
+    this.endEffects = [];
     this.buildBoardSquares(123456);
     this.bindEvents();
     this.startLoop();
@@ -96,11 +97,17 @@ export class SceneManager {
     this.renderer.setPixelRatio(dpr);
     this.renderer.setSize(this.container.clientWidth, Math.max(1, this.container.clientHeight));
     this.renderer.shadowMap.enabled = !this.lowQuality;
+    if (typeof document !== 'undefined' && document.body) {
+      document.body.classList.toggle('low-quality', this.lowQuality);
+    }
   }
 
   setLowQuality(enabled) {
     this.lowQuality = Boolean(enabled);
     this.applyQualitySettings();
+    if (this.lowQuality) {
+      this.clearEndEffects();
+    }
   }
 
   buildBoardSquares(seed) {
@@ -306,12 +313,95 @@ export class SceneManager {
     });
   }
 
+  clearEndEffects() {
+    for (const fx of this.endEffects) {
+      this.scene.remove(fx.group);
+      fx.group.traverse((child) => {
+        if (child.isMesh) {
+          child.geometry.dispose();
+          child.material.dispose();
+        }
+      });
+    }
+    this.endEffects = [];
+  }
+
+  /**
+   * Dispara efeitos 3D de fim de partida (desativados no Modo Leve).
+   * @param {'win'|'loss'|'draw'} result
+   */
+  playEndGameEffect(result) {
+    if (this.lowQuality) return;
+    this.clearEndEffects();
+
+    const colors =
+      result === 'win'
+        ? [0xfacc15, 0x22c55e, 0x38bdf8]
+        : result === 'loss'
+          ? [0xef4444, 0xf97316, 0x991b1b]
+          : [0x94a3b8, 0xe2e8f0, 0x38bdf8];
+
+    const group = new THREE.Group();
+    const particles = [];
+    const geo = new THREE.OctahedronGeometry(0.11, 0);
+
+    for (let i = 0; i < 36; i += 1) {
+      const mat = new THREE.MeshBasicMaterial({
+        color: colors[i % colors.length],
+        transparent: true,
+        opacity: 0.95,
+      });
+      const mesh = new THREE.Mesh(geo.clone(), mat);
+      const angle = (i / 36) * Math.PI * 2;
+      const radius = 0.5 + Math.random() * 2.8;
+      mesh.position.set(Math.cos(angle) * radius, 0.3 + Math.random() * 0.5, Math.sin(angle) * radius);
+      mesh.userData = {
+        vx: (Math.random() - 0.5) * 1.4,
+        vy: 1.5 + Math.random() * 2.4,
+        vz: (Math.random() - 0.5) * 1.4,
+        spin: (Math.random() - 0.5) * 6,
+      };
+      group.add(mesh);
+      particles.push(mesh);
+    }
+    geo.dispose();
+
+    this.scene.add(group);
+    this.endEffects.push({ group, particles, startedAt: this.clock.getElapsedTime() });
+  }
+
   startLoop() {
     const tick = () => {
       requestAnimationFrame(tick);
       const elapsed = this.clock.getElapsedTime();
       this.animator.updateIdle(this.pieceMeshes.values(), elapsed);
       this.world.update(elapsed);
+
+      for (let i = this.endEffects.length - 1; i >= 0; i -= 1) {
+        const fx = this.endEffects[i];
+        const age = elapsed - fx.startedAt;
+        if (age > 2.8) {
+          this.scene.remove(fx.group);
+          fx.group.traverse((child) => {
+            if (child.isMesh) {
+              child.geometry.dispose();
+              child.material.dispose();
+            }
+          });
+          this.endEffects.splice(i, 1);
+          continue;
+        }
+        const fade = Math.max(0, 1 - age / 2.8);
+        for (const p of fx.particles) {
+          p.position.x += p.userData.vx * 0.016;
+          p.position.y += p.userData.vy * 0.016;
+          p.position.z += p.userData.vz * 0.016;
+          p.userData.vy -= 0.03;
+          p.rotation.y += p.userData.spin * 0.016;
+          p.material.opacity = fade;
+        }
+      }
+
       this.controls.update();
       this.renderer.render(this.scene, this.camera);
     };

@@ -341,3 +341,55 @@ button.danger {
     bottom: 195px;
   }
 }
+
+.gameover-banner {
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #0f172a;
+  text-align: center;
+}
+
+.gameover-msg {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+@keyframes fxPulseWin {
+  0%, 100% { box-shadow: 0 0 10px rgba(250, 204, 21, 0.35); }
+  50% { box-shadow: 0 0 24px rgba(34, 197, 94, 0.65); }
+}
+
+@keyframes fxPulseLoss {
+  0%, 100% { box-shadow: 0 0 8px rgba(239, 68, 68, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(249, 115, 22, 0.55); }
+}
+
+@keyframes fxPulseDraw {
+  0%, 100% { box-shadow: 0 0 8px rgba(148, 163, 184, 0.25); }
+  50% { box-shadow: 0 0 18px rgba(56, 189, 248, 0.45); }
+}
+
+.gameover-banner.fx-win {
+  border-color: var(--accent);
+  animation: fxPulseWin 1.4s ease-in-out infinite;
+}
+
+.gameover-banner.fx-loss {
+  border-color: var(--danger);
+  animation: fxPulseLoss 1.6s ease-in-out infinite;
+}
+
+.gameover-banner.fx-draw {
+  border-color: var(--primary);
+  animation: fxPulseDraw 1.8s ease-in-out infinite;
+}
+
+body.low-quality *,
+body.low-quality *::before,
+body.low-quality *::after {
+  animation: none !important;
+  transition: none !important;
+}

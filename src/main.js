@@ -49,6 +49,9 @@ async function bootstrap() {
   scoreboard.syncFromGlobalTxt();
   const adminAuth = new AdminAuthManager();
   const a11y = new AccessibilityManager(hwidHash);
+  if (a11y.blindNarrated) {
+    soundManager.setMusicVolume(0.06);
+  }
   const ui = new UIController();
 
   // Atualiza automaticamente o período de copyright e a versão do commit
@@ -88,6 +91,8 @@ async function bootstrap() {
     onSquareClick: handleSquareClick,
   });
   sceneManager.setColorPalette(a11y.getPalette());
+  const lowQualityChk = document.getElementById('chk-low-quality');
+  if (lowQualityChk) lowQualityChk.checked = sceneManager.lowQuality;
 
   const p2p = new P2PManager({
     onStatus: (msg, url) => {
@@ -220,22 +225,41 @@ async function bootstrap() {
     if (status.isGameOver) {
       if (gameState.mode === 'IAvIA') {
         adminAiStats.games += 1;
+        let aiResult = 'draw';
+        let aiWinnerLabel = 'Empate';
         if (status.outcome === 'checkmate') {
-          if (status.winner === 'w') adminAiStats.whiteWins += 1;
-          else adminAiStats.blackWins += 1;
+          if (status.winner === 'w') {
+            adminAiStats.whiteWins += 1;
+            aiWinnerLabel = 'IA Brancas';
+          } else {
+            adminAiStats.blackWins += 1;
+            aiWinnerLabel = 'IA Pretas';
+          }
+          aiResult = 'win';
           soundManager.playSfx('victory');
         } else {
           adminAiStats.draws += 1;
         }
         saveAdminAiStats();
+        sceneManager.playEndGameEffect(aiResult);
+        showSubtitle(ui.pickGameOverAnnouncement(aiResult, aiWinnerLabel), 4200);
         updateHud();
         return;
       }
 
       let humanResult = 'draw';
+      let winnerLabel = '';
       if (status.outcome === 'checkmate') {
-        humanResult = status.winner === gameState.humanColor ? 'win' : 'loss';
+        const winnerSide = status.winner === 'w' ? 'Brancas' : 'Pretas';
+        if (gameState.mode === '1v1-local') {
+          humanResult = 'win';
+          winnerLabel = winnerSide;
+        } else {
+          humanResult = status.winner === gameState.humanColor ? 'win' : 'loss';
+          winnerLabel = humanResult === 'win' ? gameState.playerName : winnerSide;
+        }
       }
+
       if (humanResult === 'win') {
         soundManager.playSfx('victory');
         ttsManager.speak('k', 'victory');
@@ -243,12 +267,31 @@ async function bootstrap() {
         soundManager.playSfx('defeat');
         ttsManager.speak('k', 'defeat');
       }
+
       const updatedProfile = profileManager.recordMatchOutcome(humanResult);
       scoreboard.recordResult({
         hwidHash,
         playerName: gameState.playerName,
         result: humanResult,
         elo: updatedProfile.elo,
+      });
+
+      const title =
+        humanResult === 'win'
+          ? 'Vitória!'
+          : humanResult === 'loss'
+            ? 'Fim de Partida — Derrota'
+            : 'Fim de Partida — Empate';
+      const variedMsg = ui.pickGameOverAnnouncement(humanResult, winnerLabel);
+
+      sceneManager.playEndGameEffect(humanResult);
+      a11y.narrate(`${title} ${variedMsg}`, (t) => showSubtitle(t, 4500));
+      ui.openGameOverModal({
+        result: humanResult,
+        title,
+        message: variedMsg,
+        lowQuality: sceneManager.lowQuality,
+        onNewGame: () => ui.openNewGameModal({ currentName: gameState.playerName, onStart: startNewGame }),
       });
     } else if (gameState.mode === 'IAvIA') {
       setTimeout(runAiTurn, 420);
@@ -388,11 +431,12 @@ async function bootstrap() {
       },
       onToggleBlind: (enabled) => {
         if (enabled) {
+          soundManager.setMusicVolume(0.06);
           const sq = a11y.getCursorSquare();
           sceneManager.showHighlights(selectedSquare, legalMovesForSelected, sq);
           a11y.narrate(
-            `Modo narrado ativado. ${a11y.describeSquare(gameState.engine, sq)}`,
-            (t) => showSubtitle(t, 4000),
+            `Modo narrado ativado. Música reduzida para facilitar a audição. Use Setas para navegar, Enter para mover, D para descrever e T para o turno. ${a11y.describeSquare(gameState.engine, sq)}`,
+            (t) => showSubtitle(t, 4500),
           );
         } else {
           sceneManager.showHighlights(selectedSquare, legalMovesForSelected, null);
@@ -433,7 +477,7 @@ async function bootstrap() {
     if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
 
     let movedCursor = false;
-    if (ev.key === 'ArrowRight' || ev.key === 'd' && ev.shiftKey) {
+    if (ev.key === 'ArrowRight' || (ev.key.toLowerCase() === 'd' && ev.shiftKey)) {
       a11y.moveCursor(1, 0);
       movedCursor = true;
     } else if (ev.key === 'ArrowLeft' || ev.key === 'a' || ev.key === 'A') {
