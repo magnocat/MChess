@@ -1,0 +1,28 @@
+# Variáveis de ambiente e segredos
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+*.crt
+
+# Dependências e build
+node_modules/
+dist/
+coverage/
+
+# Dados de jogadores, partidas e backups locais
+data/*.txt
+data/*.json
+data/*.ndjson
+!data/.gitkeep
+backups/
+*.bak
+
+# Logs e temporários
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

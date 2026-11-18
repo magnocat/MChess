@@ -1,0 +1,22 @@
+{
+  "name": "MChess 3D",
+  "version": "1.0.0",
+  "language": "pt-BR",
+  "standard": "ASD-STE100",
+  "description": "Jogo de xadrez 3D animado no navegador com peças vivas, cenário procedural, IA adaptativa, P2P WebRTC e persistência em texto puro (.txt).",
+  "agent_entry": "/agent.html",
+  "webmcp": {
+    "supported": true,
+    "tools": [
+      "get_game_state",
+      "make_move",
+      "start_new_game",
+      "get_scoreboard",
+      "export_save_txt"
+    ]
+  },
+  "storage": {
+    "database": false,
+    "format": "text/plain (.txt)"
+  }
+}

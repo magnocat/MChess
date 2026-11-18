@@ -1,0 +1,35 @@
+name: CI - Qualidade, Testes e Segurança
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Verificar lint
+        run: npm run lint
+
+      - name: Verificar segurança estática
+        run: npm run security
+
+      - name: Executar testes automatizados
+        run: npm test
+
+      - name: Compilar versão de produção
+        run: npm run build

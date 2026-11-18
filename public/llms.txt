@@ -1,0 +1,14 @@
+# MChess 3D - Guia para Agentes (ASD-STE100)
+
+- Idioma: PT-BR
+- Padrão: ASD-STE100
+- Interface 3D Humana: /index.html
+- Interface Leve para Agentes: /agent.html
+- API no Navegador: window.__MCHESS_AGENT__ e WebMCP (navigator.modelContext)
+
+## Ferramentas Disponíveis
+1. get_game_state(): Retorna FEN, PGN, turno, xeque e lista de lances legais.
+2. make_move({ notation }): Executa um lance em notação SAN ou UCI (ex: "e4" ou "e2e4").
+3. start_new_game({ mode, seed, humanColor }): Inicia nova partida ("1vIA" ou "1v1-local").
+4. get_scoreboard(): Retorna o mural de pontuação dos jogadores humanos.
+5. export_save_txt(): Exporta o estado atual da partida em formato .txt.

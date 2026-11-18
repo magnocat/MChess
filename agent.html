@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';"
+    />
+    <title>MChess — Interface para Agentes (WebMCP)</title>
+  </head>
+  <body style="font-family: monospace; background: #0b1120; color: #e2e8f0; padding: 1.5rem;">
+    <h1>MChess — Modo Agente (ASD-STE100)</h1>
+    <p>Interface leve sem WebGL. Use WebMCP ou os controles abaixo.</p>
+
+    <div style="margin: 1rem 0; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+      <input id="agent-move-input" type="text" placeholder="Lance SAN ou UCI (ex: e4)" />
+      <button id="agent-move-btn" type="button">Executar Lance</button>
+      <button id="agent-ai-btn" type="button">Resposta da IA</button>
+      <button id="agent-new-btn" type="button">Nova Partida</button>
+      <a href="./index.html" style="color: #38bdf8; align-self: center;">Voltar ao 3D</a>
+    </div>
+
+    <pre id="agent-state-json" style="background: #1e293b; padding: 1rem; border-radius: 8px; overflow: auto;"></pre>
+    <script type="module" src="./src/agent/agentPage.js"></script>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+title = "MChess Secret Scanning"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Permitir exemplos não secretos em .env.example e testes"
+paths = [
+  '''^\.env\.example$''',
+  '''^tests/.*\.test\.js$''',
+]
