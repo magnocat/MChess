@@ -25,6 +25,7 @@ const SHARED_GEO = {
   staff: new THREE.CylinderGeometry(0.025, 0.025, 0.72, 8),
   orb: new THREE.SphereGeometry(0.07, 10, 10),
   cape: new THREE.BoxGeometry(0.36, 0.48, 0.05),
+  baseRim: new THREE.TorusGeometry(0.39, 0.022, 8, 24),
 };
 
 export function createPieceMaterials() {
@@ -110,6 +111,11 @@ export function buildLivingPiece(type, color, materials) {
   base.castShadow = true;
   base.receiveShadow = true;
   root.add(base);
+
+  const baseRim = new THREE.Mesh(SHARED_GEO.baseRim, accentMat);
+  baseRim.rotation.x = Math.PI / 2;
+  baseRim.position.y = 0.025;
+  root.add(baseRim);
 
   const body = new THREE.Group();
   body.position.y = 0.14;
