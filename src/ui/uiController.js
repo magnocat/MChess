@@ -272,7 +272,7 @@ export class UIController {
     });
   }
 
-  openAdminModal({ adminAuth, scoreboard, profileManager, onResetAll }) {
+  openAdminModal({ adminAuth, scoreboard, profileManager, adminAiStats, onStartAiVsAi, onResetAll }) {
     this.openModal('Acesso Exclusivo ADMIN', (body) => {
       if (!adminAuth.authenticated) {
         const msg = this.el('p', 'Informe a senha de administrador configurada.');
@@ -284,7 +284,14 @@ export class UIController {
         btnLogin.addEventListener('click', async () => {
           const res = await adminAuth.login(passInput.value);
           if (res.ok) {
-            this.openAdminModal({ adminAuth, scoreboard, profileManager, onResetAll });
+            this.openAdminModal({
+              adminAuth,
+              scoreboard,
+              profileManager,
+              adminAiStats,
+              onStartAiVsAi,
+              onResetAll,
+            });
           } else {
             msg.textContent = res.reason || 'Acesso negado.';
           }
@@ -295,7 +302,22 @@ export class UIController {
 
       const status = this.el('p', 'Sessão ADMIN ativa e verificada.');
 
-      const agentLink = this.el('a', 'Abrir Modo Agente (WebMCP)', 'btn-link primary');
+      const aiCard = this.el('div', '', 'card');
+      aiCard.append(
+        this.el('h2', 'Arena IA vs IA (Privado ADMIN)'),
+        this.el(
+          'p',
+          `Partidas: ${adminAiStats.games} | Brancas: ${adminAiStats.whiteWins} | Pretas: ${adminAiStats.blackWins} | Empates: ${adminAiStats.draws} | Lances: ${adminAiStats.totalMoves}`,
+        ),
+      );
+      const btnAiVsAi = this.el('button', 'Iniciar Partida Automática IA vs IA', 'primary');
+      btnAiVsAi.addEventListener('click', () => {
+        this.closeModal();
+        onStartAiVsAi();
+      });
+      aiCard.append(btnAiVsAi);
+
+      const agentLink = this.el('a', 'Abrir Modo Agente (WebMCP)', 'btn-link');
       agentLink.href = './agent.html';
 
       const btnExportMural = this.el('button', 'Exportar Mural Global (.TXT)', 'primary');
@@ -335,6 +357,7 @@ export class UIController {
 
       body.append(
         status,
+        aiCard,
         agentLink,
         btnExportMural,
         importLabel,

@@ -39,13 +39,35 @@ async function bootstrap() {
   const adminAuth = new AdminAuthManager();
   const ui = new UIController();
 
-  // Atualiza automaticamente o período de copyright a partir de 2026
+  // Atualiza automaticamente o período de copyright e a versão do commit
   const copyrightEl = document.getElementById('copyright-period');
   if (copyrightEl) {
     const startYear = 2026;
     const currentYear = new Date().getFullYear();
     copyrightEl.textContent = currentYear > startYear ? `${startYear}–${currentYear}` : `${startYear}`;
   }
+  const versionEl = document.getElementById('app-version');
+  if (versionEl) {
+    const commit = typeof __APP_COMMIT__ !== 'undefined' ? __APP_COMMIT__ : 'local';
+    const buildTime = typeof __APP_BUILD_TIME__ !== 'undefined' ? __APP_BUILD_TIME__ : '';
+    versionEl.textContent = buildTime ? `Versão ${commit} (${buildTime})` : `Versão ${commit}`;
+  }
+
+  const ADMIN_AI_STATS_KEY = 'mchess_admin_ai_stats';
+  let adminAiStats = { games: 0, whiteWins: 0, blackWins: 0, draws: 0, totalMoves: 0 };
+  try {
+    const rawStats = localStorage.getItem(ADMIN_AI_STATS_KEY);
+    if (rawStats) adminAiStats = { ...adminAiStats, ...JSON.parse(rawStats) };
+  } catch {
+    // Ignora erro de leitura
+  }
+  const saveAdminAiStats = () => {
+    try {
+      localStorage.setItem(ADMIN_AI_STATS_KEY, JSON.stringify(adminAiStats));
+    } catch {
+      // Ignora erro de escrita
+    }
+  };
 
   let selectedSquare = null;
   let legalMovesForSelected = [];
@@ -152,7 +174,10 @@ async function bootstrap() {
     await sceneManager.playMoveAnimation(moveObj, gameState.engine);
     gameState.recordUpdate();
 
-    if (moveObj.color === gameState.humanColor) {
+    if (gameState.mode === 'IAvIA') {
+      adminAiStats.totalMoves += 1;
+      saveAdminAiStats();
+    } else if (moveObj.color === gameState.humanColor) {
       if (gameState.mode === '1vIA') {
         profileManager.recordHumanMove(moveObj, moveTimeMs, gameState.engine.getHistory().length);
       }
@@ -180,6 +205,20 @@ async function bootstrap() {
     }
 
     if (status.isGameOver) {
+      if (gameState.mode === 'IAvIA') {
+        adminAiStats.games += 1;
+        if (status.outcome === 'checkmate') {
+          if (status.winner === 'w') adminAiStats.whiteWins += 1;
+          else adminAiStats.blackWins += 1;
+          soundManager.playSfx('victory');
+        } else {
+          adminAiStats.draws += 1;
+        }
+        saveAdminAiStats();
+        updateHud();
+        return;
+      }
+
       let humanResult = 'draw';
       if (status.outcome === 'checkmate') {
         humanResult = status.winner === gameState.humanColor ? 'win' : 'loss';
@@ -198,6 +237,8 @@ async function bootstrap() {
         result: humanResult,
         elo: updatedProfile.elo,
       });
+    } else if (gameState.mode === 'IAvIA') {
+      setTimeout(runAiTurn, 420);
     } else if (gameState.mode === '1vIA' && status.turn !== gameState.humanColor) {
       setTimeout(runAiTurn, 420);
     }
@@ -216,6 +257,7 @@ async function bootstrap() {
 
   async function handleSquareClick(square) {
     if (gameState.engine.isGameOver()) return;
+    if (gameState.mode === 'IAvIA') return;
     const turn = gameState.engine.getTurn();
     if (gameState.mode === '1vIA' && turn !== gameState.humanColor) return;
     if (gameState.mode === '1v1-p2p' && turn !== gameState.humanColor) return;
@@ -325,6 +367,19 @@ async function bootstrap() {
       adminAuth,
       scoreboard,
       profileManager,
+      adminAiStats,
+      onStartAiVsAi: () => {
+        gameState.startNew({
+          mode: 'IAvIA',
+          humanColor: 'w',
+          playerName: 'IA Brancas',
+          opponentName: 'IA Pretas',
+        });
+        soundManager.selectRandomTrack();
+        sceneManager.setCameraPreset('top');
+        loadWorldAndSync();
+        setTimeout(runAiTurn, 450);
+      },
       onResetAll: () => updateHud(),
     });
   });
@@ -371,14 +426,12 @@ async function bootstrap() {
   const params = new URLSearchParams(window.location.search);
   const salaId = params.get('sala');
 
-  if (savedNick) {
-    gameState.playerName = savedNick;
-    scoreboard.ensurePlayer({
-      hwidHash,
-      playerName: savedNick,
-      elo: profileManager.profile.elo,
-    });
-  }
+  gameState.playerName = savedNick || hwidHash.slice(0, 12);
+  scoreboard.ensurePlayer({
+    hwidHash,
+    playerName: gameState.playerName,
+    elo: profileManager.profile.elo,
+  });
 
   if (salaId) {
     loadWorldAndSync();

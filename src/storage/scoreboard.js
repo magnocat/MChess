@@ -37,7 +37,7 @@ export class ScoreboardManager {
    */
   ensurePlayer({ hwidHash, playerName, elo, incrementGames = false }) {
     const shortId = sanitizeText(hwidHash, 64).slice(0, 12);
-    const safeName = sanitizeText(playerName, 32) || 'Jogador';
+    const safeName = sanitizeText(playerName, 32) || shortId;
     let entry = this.entries.find((item) => item.shortId === shortId);
 
     if (!entry) {

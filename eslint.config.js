@@ -10,6 +10,8 @@ export default [
       globals: {
         ...globals.browser,
         ...globals.node,
+        __APP_COMMIT__: 'readonly',
+        __APP_BUILD_TIME__: 'readonly',
       },
     },
     rules: {
