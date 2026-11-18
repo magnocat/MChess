@@ -162,6 +162,8 @@ async function bootstrap() {
     const cfg = profileManager.getAdaptiveConfig();
     document.getElementById('ai-info').textContent = `IA Elo: ${cfg.aiElo} (Prof. ${cfg.depth})`;
     document.getElementById('hwid-short').textContent = hwidHash;
+    const hwidMiniEl = document.getElementById('hwid-mini');
+    if (hwidMiniEl) hwidMiniEl.textContent = hwidHash.slice(0, 8);
 
     const historyEl = document.getElementById('move-history');
     historyEl.replaceChildren();
