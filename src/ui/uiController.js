@@ -33,6 +33,31 @@ export class UIController {
     return node;
   }
 
+  openWelcomeModal({ currentName, isInvite, onConfirm }) {
+    this.openModal(isInvite ? 'Entrar na Partida 1 vs 1' : 'Bem-vindo ao MChess 3D', (body) => {
+      const desc = this.el(
+        'p',
+        isInvite
+          ? 'Informe seu Nick ou Nome antes de enfrentar o outro jogador:'
+          : 'Informe seu Nick ou Nome para salvar seu progresso e entrar no Mural:',
+      );
+      const nickInput = this.el('input');
+      nickInput.type = 'text';
+      nickInput.placeholder = 'Ex: MiguelMagno, ReiDoXadrez...';
+      nickInput.value = currentName || '';
+      nickInput.maxLength = 32;
+
+      const btnConfirm = this.el('button', 'Começar a Jogar', 'primary');
+      btnConfirm.addEventListener('click', () => {
+        const nick = sanitizeText(nickInput.value, 32) || 'Jogador';
+        this.closeModal();
+        onConfirm(nick);
+      });
+
+      body.append(desc, nickInput, btnConfirm);
+    });
+  }
+
   openNewGameModal({ currentName, onStart }) {
     this.openModal('Nova Partida', (body) => {
       const nameLabel = this.el('label', 'Nome do Jogador:');

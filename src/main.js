@@ -319,11 +319,31 @@ async function bootstrap() {
   });
 
   // Recuperação automática ao abrir ou entrada via link de convite P2P
+  const NICK_KEY = 'mchess_player_nick';
+  const savedNick = localStorage.getItem(NICK_KEY);
   const params = new URLSearchParams(window.location.search);
   const salaId = params.get('sala');
+
+  if (savedNick) {
+    gameState.playerName = savedNick;
+  }
+
   if (salaId) {
     loadWorldAndSync();
-    p2p.joinRoom(salaId);
+    if (!savedNick) {
+      ui.openWelcomeModal({
+        currentName: '',
+        isInvite: true,
+        onConfirm: (nick) => {
+          localStorage.setItem(NICK_KEY, nick);
+          gameState.playerName = nick;
+          updateHud();
+          p2p.joinRoom(salaId);
+        },
+      });
+    } else {
+      p2p.joinRoom(salaId);
+    }
   } else {
     const saved = loadMatchTxt(hwidHash);
     if (saved && saved.fen) {
@@ -331,6 +351,18 @@ async function bootstrap() {
       subtitleEl.textContent = 'Partida anterior restaurada automaticamente.';
     }
     loadWorldAndSync();
+    if (!savedNick) {
+      ui.openWelcomeModal({
+        currentName: '',
+        isInvite: false,
+        onConfirm: (nick) => {
+          localStorage.setItem(NICK_KEY, nick);
+          gameState.playerName = nick;
+          saveMatchTxt(hwidHash, gameState.serialize(hwidHash));
+          updateHud();
+        },
+      });
+    }
   }
 }
 

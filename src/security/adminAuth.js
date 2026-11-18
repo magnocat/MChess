@@ -3,21 +3,23 @@
  * Compara o hash SHA-256 da senha sem expor a senha no código.
  */
 
-const DEFAULT_DEV_HASH =
-  '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918';
-
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MS = 60_000;
 
 export class AdminAuthManager {
   constructor(expectedHash = null) {
-    this.expectedHash =
-      expectedHash ||
-      (typeof import.meta !== 'undefined' && import.meta.env?.VITE_ADMIN_PASS_HASH) ||
-      DEFAULT_DEV_HASH;
+    const envHash =
+      typeof import.meta !== 'undefined' && import.meta.env?.VITE_ADMIN_PASS_HASH
+        ? String(import.meta.env.VITE_ADMIN_PASS_HASH).trim()
+        : '';
+    this.expectedHash = expectedHash || envHash || null;
     this.failedAttempts = 0;
     this.lockedUntil = 0;
     this.authenticated = false;
+  }
+
+  isConfigured() {
+    return typeof this.expectedHash === 'string' && /^[a-f0-9]{64}$/i.test(this.expectedHash);
   }
 
   /**
@@ -49,6 +51,13 @@ export class AdminAuthManager {
    * @returns {Promise<{ok: boolean, reason?: string}>}
    */
   async login(password, now = Date.now()) {
+    if (!this.isConfigured()) {
+      return {
+        ok: false,
+        reason: 'Acesso ADMIN bloqueado. Configure VITE_ADMIN_PASS_HASH nos Segredos do GitHub ou em .env.local.',
+      };
+    }
+
     if (this.isLocked(now)) {
       const waitSec = Math.ceil((this.lockedUntil - now) / 1000);
       return { ok: false, reason: `Acesso bloqueado. Aguarde ${waitSec}s.` };
@@ -59,7 +68,7 @@ export class AdminAuthManager {
     }
 
     const digest = await this.sha256(password);
-    if (digest === this.expectedHash) {
+    if (digest === this.expectedHash.toLowerCase()) {
       this.failedAttempts = 0;
       this.lockedUntil = 0;
       this.authenticated = true;

@@ -33,6 +33,7 @@ jobs:
       - name: Compilar site estático
         env:
           VITE_BASE_PATH: /MChess/
+          VITE_ADMIN_PASS_HASH: ${{ secrets.VITE_ADMIN_PASS_HASH }}
         run: npm run build
 
       - name: Enviar artefato do Pages
