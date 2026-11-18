@@ -19,6 +19,16 @@ async function bootstrap() {
   const gameState = new GameState();
   const soundManager = new SoundManager();
   const subtitleEl = document.getElementById('tts-subtitle');
+
+  const unlockMusicOnGesture = () => {
+    if (soundManager.musicEnabled && !soundManager.audioEl && !soundManager.musicTimer) {
+      soundManager.startMusicLoop();
+    }
+    window.removeEventListener('pointerdown', unlockMusicOnGesture);
+    window.removeEventListener('keydown', unlockMusicOnGesture);
+  };
+  window.addEventListener('pointerdown', unlockMusicOnGesture, { once: true });
+  window.addEventListener('keydown', unlockMusicOnGesture, { once: true });
   const ttsManager = new TtsManager(soundManager, (text) => {
     subtitleEl.textContent = text;
   });

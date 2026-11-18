@@ -17,7 +17,7 @@ export const MUSIC_TRACKS = [
 export class SoundManager {
   constructor() {
     this.ctx = null;
-    this.musicEnabled = false;
+    this.musicEnabled = true;
     this.sfxEnabled = true;
     this.voicesEnabled = true;
 
