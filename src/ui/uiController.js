@@ -1,6 +1,7 @@
 import { sanitizeText, isValidHwidHash } from '../security/sanitizer.js';
 import { downloadTxtFile } from '../storage/txtStorage.js';
 import { MUSIC_TRACKS } from '../audio/soundManager.js';
+import { COLOR_MODES } from '../accessibility/accessibilityManager.js';
 
 /**
  * Controla os modais e a interface do usuário usando apenas DOM seguro (sem innerHTML).
@@ -269,6 +270,67 @@ export class UIController {
         'Classificação global de jogadores humanos. Vitória: 3 pts | Empate: 1 pt.',
       );
       body.append(infoGlobal);
+    });
+  }
+
+  openAccessibilityModal({ a11y, onPaletteChange, onToggleBlind, onDownloadLgpdTxt, onDeleteAllData }) {
+    this.openModal('Acessibilidade, Inclusão e LGPD', (body) => {
+      // 1. Daltonismo
+      const colorCard = this.el('div', '', 'card');
+      colorCard.append(this.el('h2', 'Modo de Cor (Daltonismo — Salvo no HWID)'));
+      const select = this.el('select');
+      for (const mode of COLOR_MODES) {
+        const opt = this.el('option', mode.label);
+        opt.value = mode.id;
+        if (mode.id === a11y.colorMode) opt.selected = true;
+        select.append(opt);
+      }
+      select.addEventListener('change', () => {
+        a11y.setColorMode(select.value);
+        onPaletteChange(a11y.getPalette());
+      });
+      colorCard.append(select);
+
+      // 2. Modo Narrado para Cegos
+      const blindCard = this.el('div', '', 'card');
+      blindCard.append(this.el('h2', 'Modo Narrado para Cegos'));
+      const chkRow = this.el('label', '', 'checkbox-row');
+      const chk = this.el('input');
+      chk.type = 'checkbox';
+      chk.checked = a11y.blindNarrated;
+      chk.addEventListener('change', () => {
+        a11y.setBlindNarrated(chk.checked);
+        onToggleBlind(chk.checked);
+      });
+      chkRow.append(chk, this.el('span', 'Ativar narração de casas, peças e movimento por teclado'));
+      const help = this.el(
+        'p',
+        'Teclado: Setas ou WASD movem o cursor. Enter ou Espaço selecionam e movem. Tecla D descreve a casa. Tecla T informa o turno.',
+      );
+      blindCard.append(chkRow, help);
+
+      // 3. LGPD
+      const lgpdCard = this.el('div', '', 'card');
+      lgpdCard.append(
+        this.el('h2', 'Privacidade e LGPD'),
+        this.el(
+          'p',
+          'Seus dados (Nick, HWID, partidas em .txt e preferências) ficam apenas no seu navegador, sem banco de dados. Você pode baixar ou excluir tudo a qualquer momento.',
+        ),
+      );
+      const lgpdRow = this.el('div', '', 'btn-row');
+      const btnDownload = this.el('button', 'Baixar Meus Dados (.TXT)', 'primary');
+      btnDownload.addEventListener('click', () => onDownloadLgpdTxt());
+
+      const btnDelete = this.el('button', 'Excluir Todos os Meus Dados (LGPD)', 'danger');
+      btnDelete.addEventListener('click', () => {
+        onDeleteAllData();
+        this.closeModal();
+      });
+      lgpdRow.append(btnDownload, btnDelete);
+      lgpdCard.append(lgpdRow);
+
+      body.append(colorCard, blindCard, lgpdCard);
     });
   }
 

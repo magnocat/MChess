@@ -10,6 +10,35 @@
   --danger: #dc2626;
 }
 
+[data-color-mode='protanopia'] {
+  --accent: #facc15;
+  --primary: #0284c7;
+  --danger: #ca8a04;
+}
+
+[data-color-mode='deuteranopia'] {
+  --accent: #fef08a;
+  --primary: #1d4ed8;
+  --danger: #ea580c;
+}
+
+[data-color-mode='tritanopia'] {
+  --accent: #ffffff;
+  --primary: #0d9488;
+  --danger: #e11d48;
+}
+
+[data-color-mode='achromatopsia'] {
+  --bg: #000000;
+  --panel: #111111;
+  --border: #ffffff;
+  --text: #ffffff;
+  --muted: #cbd5e1;
+  --accent: #ffffff;
+  --primary: #334155;
+  --danger: #475569;
+}
+
 * {
   box-sizing: border-box;
 }

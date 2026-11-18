@@ -70,9 +70,30 @@ O jogador pode trocar a faixa ou silenciar a música a qualquer momento no menu 
 
 ---
 
+## 🤝 Inclusão Social, Acessibilidade e LGPD
+
+O **MChess 3D** foi projetado para que todas as pessoas possam jogar com autonomia:
+
+- **Modos para Todos os Tipos de Daltonismo (Persistentes por HWID):**
+  - **Protanopia** (Azul / Amarelo)
+  - **Deuteranopia** (Azul / Laranja)
+  - **Tritanopia** (Ciano / Rosa)
+  - **Acromatopsia** (Alto Contraste Monocromático)
+  - A escolha fica salva no seu identificador local (**HWID**) e altera tanto a interface quanto o tabuleiro 3D e os indicadores de movimento.
+- **Modo Narrado para Pessoas Cegas e Baixa Visão:**
+  - Navegue pelo tabuleiro com o teclado (`Setas` ou `WASD`), selecione e mova peças com `Enter`/`Espaço` e ouça a descrição completa da casa, da peça e de todos os lances legais (`D`) ou da vez atual (`T`) em **PT-BR**.
+- **Privacidade e LGPD:**
+  - Todos os dados ficam no seu próprio navegador, sem banco de dados externo.
+  - No menu **Acessibilidade / LGPD**, você pode **baixar todos os seus dados** em `.txt` ou **apagar permanentemente** seu HWID, histórico, estatísticas e preferências.
+
+Leia os detalhes completos em [Guia de Acessibilidade e LGPD](docs/ACCESSIBILITY.md).
+
+---
+
 ## 📚 Documentação Técnica
 
 - [Arquitetura do Sistema](docs/ARCHITECTURE.md)
+- [Acessibilidade, Inclusão e LGPD](docs/ACCESSIBILITY.md)
 - [Segurança e Gestão de Segredos](docs/SECURITY.md)
 - [Inteligência Artificial Adaptativa](docs/AI.md)
 - [Persistência em .TXT e HWID](docs/STORAGE.md)

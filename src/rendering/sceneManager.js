@@ -60,10 +60,24 @@ export class SceneManager {
     this.pointer = new THREE.Vector2();
     this.clock = new THREE.Clock();
     this.isAnimatingMove = false;
+    this.currentSeed = 123456;
+    this.colorPalette = {
+      legalColor: 0x22c55e,
+      captureColor: 0xef4444,
+      selectedColor: 0xfacc15,
+      boardLight: null,
+      boardDark: null,
+    };
 
     this.buildBoardSquares(123456);
     this.bindEvents();
     this.startLoop();
+  }
+
+  setColorPalette(palette) {
+    if (!palette) return;
+    this.colorPalette = palette;
+    this.buildBoardSquares(this.currentSeed);
   }
 
   setupLights() {
@@ -90,6 +104,7 @@ export class SceneManager {
   }
 
   buildBoardSquares(seed) {
+    this.currentSeed = seed;
     while (this.boardGroup.children.length > 0) {
       const m = this.boardGroup.children[0];
       this.boardGroup.remove(m);
@@ -99,6 +114,8 @@ export class SceneManager {
     this.squareMeshes.clear();
 
     const biome = getBiomeForSeed(seed);
+    const lightCol = this.colorPalette?.boardLight ?? biome.boardLight;
+    const darkCol = this.colorPalette?.boardDark ?? biome.boardDark;
     const sqGeo = new THREE.BoxGeometry(1, 0.14, 1);
 
     for (let rank = 1; rank <= 8; rank += 1) {
@@ -106,7 +123,7 @@ export class SceneManager {
         const square = `${FILES[f]}${rank}`;
         const isLight = (f + rank) % 2 === 1;
         const mat = new THREE.MeshStandardMaterial({
-          color: isLight ? biome.boardLight : biome.boardDark,
+          color: isLight ? lightCol : darkCol,
           roughness: 0.55,
           metalness: 0.08,
         });
@@ -165,7 +182,7 @@ export class SceneManager {
     }
   }
 
-  showHighlights(selectedSquare, legalMoves) {
+  showHighlights(selectedSquare, legalMoves, cursorSquare = null) {
     while (this.highlightsGroup.children.length > 0) {
       const m = this.highlightsGroup.children[0];
       this.highlightsGroup.remove(m);
@@ -173,11 +190,26 @@ export class SceneManager {
       m.material.dispose();
     }
 
+    if (cursorSquare) {
+      const pos = squareToWorld(cursorSquare);
+      const cursorRing = new THREE.Mesh(
+        new THREE.RingGeometry(0.38, 0.48, 4),
+        new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide }),
+      );
+      cursorRing.rotation.x = -Math.PI / 2;
+      cursorRing.rotation.z = Math.PI / 4;
+      cursorRing.position.set(pos.x, 0.03, pos.z);
+      this.highlightsGroup.add(cursorRing);
+    }
+
     if (selectedSquare) {
       const pos = squareToWorld(selectedSquare);
       const ring = new THREE.Mesh(
         new THREE.RingGeometry(0.32, 0.44, 24),
-        new THREE.MeshBasicMaterial({ color: 0xfacc15, side: THREE.DoubleSide }),
+        new THREE.MeshBasicMaterial({
+          color: this.colorPalette?.selectedColor ?? 0xfacc15,
+          side: THREE.DoubleSide,
+        }),
       );
       ring.rotation.x = -Math.PI / 2;
       ring.position.set(pos.x, 0.02, pos.z);
@@ -190,9 +222,11 @@ export class SceneManager {
       const marker = new THREE.Mesh(
         new THREE.CircleGeometry(isCapture ? 0.36 : 0.16, 20),
         new THREE.MeshBasicMaterial({
-          color: isCapture ? 0xef4444 : 0x22c55e,
+          color: isCapture
+            ? (this.colorPalette?.captureColor ?? 0xef4444)
+            : (this.colorPalette?.legalColor ?? 0x22c55e),
           transparent: true,
-          opacity: 0.78,
+          opacity: 0.85,
           side: THREE.DoubleSide,
         }),
       );

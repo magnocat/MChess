@@ -7,12 +7,13 @@ import { PlayerProfileManager } from './ai/playerProfile.js';
 import { chooseAdaptiveMove } from './ai/chessAI.js';
 import { P2PManager } from './multiplayer/p2pManager.js';
 import { getOrCreateHwidHash, setActiveHwidHash } from './storage/hwid.js';
-import { downloadTxtFile, loadMatchTxt, saveMatchTxt } from './storage/txtStorage.js';
+import { downloadTxtFile, formatTxtRecord, loadMatchTxt, saveMatchTxt } from './storage/txtStorage.js';
 import { ScoreboardManager } from './storage/scoreboard.js';
 import { AdminAuthManager } from './security/adminAuth.js';
 import { parseSafeTxtPayload } from './security/sanitizer.js';
 import { registerAgentLayer } from './agent/webmcp.js';
 import { UIController } from './ui/uiController.js';
+import { AccessibilityManager } from './accessibility/accessibilityManager.js';
 
 async function bootstrap() {
   let hwidHash = await getOrCreateHwidHash();
@@ -47,6 +48,7 @@ async function bootstrap() {
   const scoreboard = new ScoreboardManager();
   scoreboard.syncFromGlobalTxt();
   const adminAuth = new AdminAuthManager();
+  const a11y = new AccessibilityManager(hwidHash);
   const ui = new UIController();
 
   // Atualiza automaticamente o período de copyright e a versão do commit
@@ -85,6 +87,7 @@ async function bootstrap() {
   const sceneManager = new SceneManager(document.getElementById('canvas-container'), {
     onSquareClick: handleSquareClick,
   });
+  sceneManager.setColorPalette(a11y.getPalette());
 
   const p2p = new P2PManager({
     onStatus: (msg, url) => {
@@ -370,6 +373,100 @@ async function bootstrap() {
 
   document.getElementById('btn-audio').addEventListener('click', () => {
     ui.openAudioModal(soundManager);
+  });
+
+  document.getElementById('btn-a11y').addEventListener('click', () => {
+    ui.openAccessibilityModal({
+      a11y,
+      onPaletteChange: (palette) => {
+        sceneManager.setColorPalette(palette);
+        sceneManager.showHighlights(
+          selectedSquare,
+          legalMovesForSelected,
+          a11y.blindNarrated ? a11y.getCursorSquare() : null,
+        );
+      },
+      onToggleBlind: (enabled) => {
+        if (enabled) {
+          const sq = a11y.getCursorSquare();
+          sceneManager.showHighlights(selectedSquare, legalMovesForSelected, sq);
+          a11y.narrate(
+            `Modo narrado ativado. ${a11y.describeSquare(gameState.engine, sq)}`,
+            (t) => showSubtitle(t, 4000),
+          );
+        } else {
+          sceneManager.showHighlights(selectedSquare, legalMovesForSelected, null);
+        }
+      },
+      onDownloadLgpdTxt: () => {
+        const bundle = formatTxtRecord('LGPD_EXPORT', hwidHash, {
+          nick: gameState.playerName,
+          match: gameState.serialize(hwidHash),
+          aiProfile: profileManager.profile,
+          accessibility: { colorMode: a11y.colorMode, blindNarrated: a11y.blindNarrated },
+          scoreboard: scoreboard.entries.filter((e) => e.shortId === hwidHash.slice(0, 12)),
+        });
+        downloadTxtFile(`mchess-lgpd-${hwidHash.slice(0, 8)}.txt`, bundle);
+        showSubtitle('Seus dados foram baixados em formato .TXT.');
+      },
+      onDeleteAllData: () => {
+        scoreboard.removeByShortId(hwidHash.slice(0, 12));
+        localStorage.removeItem('mchess_player_nick');
+        localStorage.removeItem(`mchess_save_${hwidHash}`);
+        localStorage.removeItem(`mchess_profile_${hwidHash}`);
+        localStorage.removeItem(`mchess_a11y_${hwidHash}`);
+        localStorage.removeItem('mchess_hwid_hash');
+        localStorage.removeItem('mchess_hwid_salt');
+        a11y.setColorMode('normal');
+        a11y.setBlindNarrated(false);
+        sceneManager.setColorPalette(a11y.getPalette());
+        gameState.startNew({ mode: '1vIA', humanColor: 'w', playerName: 'Anônimo' });
+        loadWorldAndSync();
+        showSubtitle('Todos os seus dados locais foram excluídos (LGPD).');
+      },
+    });
+  });
+
+  window.addEventListener('keydown', (ev) => {
+    if (!a11y.blindNarrated) return;
+    const tag = ev.target?.tagName;
+    if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+
+    let movedCursor = false;
+    if (ev.key === 'ArrowRight' || ev.key === 'd' && ev.shiftKey) {
+      a11y.moveCursor(1, 0);
+      movedCursor = true;
+    } else if (ev.key === 'ArrowLeft' || ev.key === 'a' || ev.key === 'A') {
+      a11y.moveCursor(-1, 0);
+      movedCursor = true;
+    } else if (ev.key === 'ArrowUp' || ev.key === 'w' || ev.key === 'W') {
+      a11y.moveCursor(0, 1);
+      movedCursor = true;
+    } else if (ev.key === 'ArrowDown' || ev.key === 's' || ev.key === 'S') {
+      a11y.moveCursor(0, -1);
+      movedCursor = true;
+    } else if (ev.key === 'Enter' || ev.key === ' ') {
+      ev.preventDefault();
+      handleSquareClick(a11y.getCursorSquare());
+      return;
+    } else if (ev.key === 'd' || ev.key === 'D') {
+      const sq = a11y.getCursorSquare();
+      a11y.narrate(a11y.describeSquare(gameState.engine, sq), (t) => showSubtitle(t, 4000));
+      return;
+    } else if (ev.key === 't' || ev.key === 'T') {
+      const st = gameState.engine.getStatus();
+      const turnPt = st.turn === 'w' ? 'Brancas' : 'Pretas';
+      const checkMsg = st.inCheck ? 'Atenção: Rei em xeque!' : '';
+      a11y.narrate(`Turno das ${turnPt}. ${checkMsg}`, (t) => showSubtitle(t, 3500));
+      return;
+    }
+
+    if (movedCursor) {
+      ev.preventDefault();
+      const sq = a11y.getCursorSquare();
+      sceneManager.showHighlights(selectedSquare, legalMovesForSelected, sq);
+      a11y.narrate(a11y.describeSquare(gameState.engine, sq), (t) => showSubtitle(t, 4000));
+    }
   });
 
   document.getElementById('btn-admin').addEventListener('click', () => {
