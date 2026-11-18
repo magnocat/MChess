@@ -1,5 +1,6 @@
 import { sanitizeText, isValidHwidHash } from '../security/sanitizer.js';
 import { downloadTxtFile } from '../storage/txtStorage.js';
+import { MUSIC_TRACKS } from '../audio/soundManager.js';
 
 /**
  * Controla os modais e a interface do usuário usando apenas DOM seguro (sem innerHTML).
@@ -195,6 +196,24 @@ export class UIController {
         (v) => soundManager.setMusicEnabled(v),
         (v) => soundManager.setMusicVolume(v),
       );
+
+      const trackWrap = this.el('div', '', 'card');
+      const trackLabel = this.el('label', 'Escolher Faixa Musical:');
+      const select = this.el('select');
+      for (const track of MUSIC_TRACKS) {
+        const opt = this.el('option', track.label);
+        opt.value = track.id;
+        if (track.id === soundManager.selectedTrackId) opt.selected = true;
+        select.append(opt);
+      }
+      select.addEventListener('change', () => soundManager.setMusicTrack(select.value));
+      const notice = this.el(
+        'p',
+        'Trilha sonora gerada originalmente no Google Flow, livre de direitos autorais.',
+      );
+      trackWrap.append(trackLabel, select, notice);
+      body.append(trackWrap);
+
       addControl(
         'Efeitos Sonoros (Movimento e Combate)',
         soundManager.sfxEnabled,

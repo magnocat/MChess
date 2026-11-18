@@ -1,7 +1,14 @@
 /**
- * Gerenciador de áudio via Web Audio API.
+ * Gerenciador de áudio via Web Audio API e faixas MP3 opcionais (Google Flow).
  * Controla música, efeitos sonoros e vozes de forma independente.
  */
+
+export const MUSIC_TRACKS = [
+  { id: 'synth', label: 'Sintetizador Nativo (Leve)', url: null },
+  { id: 'track1', label: 'Faixa 1 (Google Flow)', url: './audio/music/track1.mp3' },
+  { id: 'track2', label: 'Faixa 2 (Google Flow)', url: './audio/music/track2.mp3' },
+  { id: 'track3', label: 'Faixa 3 (Google Flow)', url: './audio/music/track3.mp3' },
+];
 
 export class SoundManager {
   constructor() {
@@ -14,6 +21,8 @@ export class SoundManager {
     this.sfxVolume = 0.6;
     this.voicesVolume = 0.85;
 
+    this.selectedTrackId = 'synth';
+    this.audioEl = null;
     this.musicTimer = null;
     this.noteStep = 0;
   }
@@ -29,6 +38,14 @@ export class SoundManager {
       this.ctx.resume().catch(() => {});
     }
     return this.ctx;
+  }
+
+  setMusicTrack(trackId) {
+    this.selectedTrackId = trackId;
+    if (this.musicEnabled) {
+      this.stopMusicLoop();
+      this.startMusicLoop();
+    }
   }
 
   setMusicEnabled(enabled) {
@@ -50,6 +67,9 @@ export class SoundManager {
 
   setMusicVolume(vol) {
     this.musicVolume = Math.max(0, Math.min(1, Number(vol)));
+    if (this.audioEl) {
+      this.audioEl.volume = this.musicVolume;
+    }
   }
 
   setSfxVolume(vol) {
@@ -116,8 +136,22 @@ export class SoundManager {
   }
 
   startMusicLoop() {
+    const track = MUSIC_TRACKS.find((t) => t.id === this.selectedTrackId);
+    if (track && track.url && typeof Audio !== 'undefined') {
+      this.audioEl = new Audio(track.url);
+      this.audioEl.loop = true;
+      this.audioEl.volume = this.musicVolume;
+      this.audioEl.play().catch(() => {
+        // Se a faixa MP3 ainda não existir, usa o sintetizador leve
+        this.startSynthLoop();
+      });
+      return;
+    }
+    this.startSynthLoop();
+  }
+
+  startSynthLoop() {
     if (this.musicTimer) return;
-    // Progressão medieval suave em Ré menor
     const notes = [293.66, 349.23, 440.0, 392.0, 349.23, 329.63, 293.66, 220.0];
     this.musicTimer = setInterval(() => {
       if (!this.musicEnabled) return;
@@ -128,6 +162,10 @@ export class SoundManager {
   }
 
   stopMusicLoop() {
+    if (this.audioEl) {
+      this.audioEl.pause();
+      this.audioEl = null;
+    }
     if (this.musicTimer) {
       clearInterval(this.musicTimer);
       this.musicTimer = null;

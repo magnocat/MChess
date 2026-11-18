@@ -1,32 +1,11 @@
 # Avisos de Terceiros (THIRD-PARTY-NOTICES)
 
-Este projeto usa apenas bibliotecas e referências open-source gratuitas.
+Este projeto usa apenas bibliotecas e recursos open-source ou livres de direitos autorais.
 
-1. **mrabhin03/3D-Chess-Game**
-   - Repositório base: https://github.com/mrabhin03/3D-Chess-Game
-   - Licença: MIT
-   - Uso: Arquitetura inicial de referência com Three.js, GSAP e chess.js.
-
-2. **Three.js**
-   - Repositório: https://github.com/mrdoob/three.js
-   - Licença: MIT
-   - Uso: Renderização 3D WebGL, geometrias, luzes e câmera.
-
-3. **GSAP (GreenSock Animation Platform)**
-   - Repositório: https://github.com/greensock/GSAP
-   - Licença: Standard "No Charge" GSAP License
-   - Uso: Animações suaves de peças e câmera.
-
-4. **chess.js**
-   - Repositório: https://github.com/jhlywa/chess.js
-   - Licença: BSD-2-Clause
-   - Uso: Validação estrita das regras oficiais do xadrez.
-
-5. **PeerJS**
-   - Repositório: https://github.com/peers/peerjs
-   - Licença: MIT
-   - Uso: Conexão P2P via WebRTC para partidas 1 vs 1 por link.
-
-6. **Vite / Vitest / ESLint**
-   - Licença: MIT
-   - Uso: Empacotamento, testes automatizados e análise estática de código.
+1. **mrabhin03/3D-Chess-Game** — Licença MIT (referência inicial com Three.js, GSAP e chess.js).
+2. **Three.js** — Licença MIT (renderização 3D WebGL).
+3. **GSAP** — Standard "No Charge" GSAP License (animações).
+4. **chess.js** — Licença BSD-2-Clause (regras oficiais do xadrez).
+5. **PeerJS** — Licença MIT (conexão P2P WebRTC).
+6. **Vite / Vitest / ESLint** — Licença MIT (empacotamento, testes e lint).
+7. **Trilha Sonora (`public/audio/music/`)** — Músicas instrumentais geradas originalmente via **Google Flow**, livres de direitos autorais.
