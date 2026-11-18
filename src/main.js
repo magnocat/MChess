@@ -19,6 +19,16 @@ async function bootstrap() {
   const gameState = new GameState();
   const soundManager = new SoundManager();
   const subtitleEl = document.getElementById('tts-subtitle');
+  let subtitleTimer = null;
+  const showSubtitle = (text, durationMs = 2800) => {
+    if (!subtitleEl || !text) return;
+    subtitleEl.textContent = text;
+    subtitleEl.classList.add('visible');
+    if (subtitleTimer) clearTimeout(subtitleTimer);
+    subtitleTimer = setTimeout(() => {
+      subtitleEl.classList.remove('visible');
+    }, durationMs);
+  };
 
   const unlockMusicOnGesture = () => {
     if (soundManager.musicEnabled && !soundManager.audioEl && !soundManager.musicTimer) {
@@ -30,7 +40,7 @@ async function bootstrap() {
   window.addEventListener('pointerdown', unlockMusicOnGesture, { once: true });
   window.addEventListener('keydown', unlockMusicOnGesture, { once: true });
   const ttsManager = new TtsManager(soundManager, (text) => {
-    subtitleEl.textContent = text;
+    showSubtitle(text, 2800);
   });
 
   const profileManager = new PlayerProfileManager(hwidHash);
@@ -78,7 +88,7 @@ async function bootstrap() {
 
   const p2p = new P2PManager({
     onStatus: (msg, url) => {
-      subtitleEl.textContent = msg;
+      showSubtitle(msg);
       if (url) {
         ui.openP2PModal({
           inviteUrl: url,
@@ -115,7 +125,7 @@ async function bootstrap() {
       }
     },
     onDisconnected: () => {
-      subtitleEl.textContent = 'Oponente P2P desconectou.';
+      showSubtitle('Oponente P2P desconectou.');
     },
   });
 
@@ -333,9 +343,9 @@ async function bootstrap() {
           }
           gameState.restore(payload);
           loadWorldAndSync();
-          subtitleEl.textContent = 'Partida restaurada do arquivo .TXT.';
+          showSubtitle('Partida restaurada do arquivo .TXT.');
         } catch (err) {
-          subtitleEl.textContent = err.message || 'Erro ao importar arquivo .TXT.';
+          showSubtitle(err.message || 'Erro ao importar arquivo .TXT.');
         }
       },
       onRecoverHash: (newHash) => {
@@ -345,10 +355,10 @@ async function bootstrap() {
         if (saved) {
           gameState.restore(saved);
           loadWorldAndSync();
-          subtitleEl.textContent = 'Sessão restaurada pelo Hash HWID.';
+          showSubtitle('Sessão restaurada pelo Hash HWID.');
         } else {
           updateHud();
-          subtitleEl.textContent = 'Hash HWID ativado. Nenhuma partida local anterior encontrada.';
+          showSubtitle('Hash HWID ativado. Nenhuma partida local anterior encontrada.');
         }
       },
     });
@@ -394,7 +404,7 @@ async function bootstrap() {
   document.getElementById('btn-copy-hwid').addEventListener('click', async () => {
     if (navigator.clipboard) {
       await navigator.clipboard.writeText(hwidHash);
-      subtitleEl.textContent = 'Hash HWID copiado! Guarde para recuperar sua partida.';
+      showSubtitle('Hash HWID copiado! Guarde para recuperar sua partida.');
     }
   });
 
@@ -459,7 +469,7 @@ async function bootstrap() {
     const saved = loadMatchTxt(hwidHash);
     if (saved && saved.fen) {
       gameState.restore(saved);
-      subtitleEl.textContent = 'Partida anterior restaurada automaticamente.';
+      showSubtitle('Partida anterior restaurada automaticamente.');
     }
     loadWorldAndSync();
     if (!savedNick) {
