@@ -4,10 +4,14 @@
  */
 
 export const MUSIC_TRACKS = [
-  { id: 'synth', label: 'Sintetizador Nativo (Leve)', url: null },
   { id: 'track1', label: 'Faixa 1 (Google Flow)', url: './audio/music/track1.mp3' },
   { id: 'track2', label: 'Faixa 2 (Google Flow)', url: './audio/music/track2.mp3' },
   { id: 'track3', label: 'Faixa 3 (Google Flow)', url: './audio/music/track3.mp3' },
+  { id: 'track4', label: 'Faixa 4 (Google Flow)', url: './audio/music/track4.mp3' },
+  { id: 'track5', label: 'Faixa 5 (Google Flow)', url: './audio/music/track5.mp3' },
+  { id: 'track6', label: 'Faixa 6 (Google Flow)', url: './audio/music/track6.mp3' },
+  { id: 'track7', label: 'Faixa 7 (Google Flow)', url: './audio/music/track7.mp3' },
+  { id: 'synth', label: 'Sintetizador Nativo (Leve)', url: null },
 ];
 
 export class SoundManager {
@@ -21,10 +25,20 @@ export class SoundManager {
     this.sfxVolume = 0.6;
     this.voicesVolume = 0.85;
 
-    this.selectedTrackId = 'synth';
+    this.selectedTrackId = this.pickRandomTrackId();
     this.audioEl = null;
     this.musicTimer = null;
     this.noteStep = 0;
+  }
+
+  pickRandomTrackId() {
+    const idx = Math.floor(Math.random() * 7) + 1;
+    return `track${idx}`;
+  }
+
+  selectRandomTrack() {
+    this.setMusicTrack(this.pickRandomTrackId());
+    return this.selectedTrackId;
   }
 
   ensureContext() {

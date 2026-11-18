@@ -207,6 +207,7 @@ async function bootstrap() {
 
   function startNewGame(opts) {
     gameState.startNew(opts);
+    soundManager.selectRandomTrack();
     saveMatchTxt(hwidHash, gameState.serialize(hwidHash));
     sceneManager.setCameraPreset(gameState.humanColor);
     loadWorldAndSync();
