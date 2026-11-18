@@ -235,12 +235,14 @@ export class UIController {
     this.openModal('Mural de Pontuação (Jogadores Humanos)', (body) => {
       const entries = scoreboard.getTopEntries(20);
       if (entries.length === 0) {
-        body.append(this.el('p', 'Nenhuma partida finalizada registrada ainda.'));
+        body.append(this.el('p', 'Nenhum jogador registrado ainda.'));
       } else {
         const table = this.el('table', '', 'score-table');
         const thead = this.el('thead');
         const trHead = this.el('tr');
-        ['Jogador', 'HWID', 'Pts', 'V/E/D', 'Elo'].forEach((h) => trHead.append(this.el('th', h)));
+        ['Nick', 'HWID', 'Pts', 'Partidas', 'Lances', 'V/E/D', 'Elo'].forEach((h) =>
+          trHead.append(this.el('th', h)),
+        );
         thead.append(trHead);
         table.append(thead);
 
@@ -251,6 +253,8 @@ export class UIController {
             this.el('td', item.playerName),
             this.el('td', item.shortId.slice(0, 8)),
             this.el('td', String(item.points)),
+            this.el('td', String(item.games ?? item.wins + item.draws + item.losses)),
+            this.el('td', String(item.moves ?? 0)),
             this.el('td', `${item.wins}/${item.draws}/${item.losses}`),
             this.el('td', String(item.elo)),
           );
@@ -260,11 +264,26 @@ export class UIController {
         body.append(table);
       }
 
+      const row = this.el('div', '', 'btn-row');
       const btnExport = this.el('button', 'Exportar Mural (.TXT)', 'primary');
       btnExport.addEventListener('click', () => {
         downloadTxtFile('mchess-mural.txt', scoreboard.exportTxt());
       });
-      body.append(btnExport);
+
+      const importLabel = this.el('label', 'Importar Mural (.TXT):');
+      const fileInput = this.el('input');
+      fileInput.type = 'file';
+      fileInput.accept = '.txt,text/plain';
+      fileInput.addEventListener('change', async (ev) => {
+        const file = ev.target.files?.[0];
+        if (!file) return;
+        const text = await file.text();
+        scoreboard.importTxt(text);
+        this.openScoreboardModal(scoreboard);
+      });
+
+      row.append(btnExport);
+      body.append(row, importLabel, fileInput);
     });
   }
 

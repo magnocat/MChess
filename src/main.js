@@ -130,8 +130,15 @@ async function bootstrap() {
     await sceneManager.playMoveAnimation(moveObj, gameState.engine);
     gameState.recordUpdate();
 
-    if (gameState.mode === '1vIA' && moveObj.color === gameState.humanColor) {
-      profileManager.recordHumanMove(moveObj, moveTimeMs, gameState.engine.getHistory().length);
+    if (moveObj.color === gameState.humanColor) {
+      if (gameState.mode === '1vIA') {
+        profileManager.recordHumanMove(moveObj, moveTimeMs, gameState.engine.getHistory().length);
+      }
+      scoreboard.recordMove({
+        hwidHash,
+        playerName: gameState.playerName,
+        elo: profileManager.profile.elo,
+      });
     }
 
     if (gameState.mode === '1v1-p2p' && !isRemote) {
@@ -217,6 +224,13 @@ async function bootstrap() {
 
   function startNewGame(opts) {
     gameState.startNew(opts);
+    localStorage.setItem('mchess_player_nick', gameState.playerName);
+    scoreboard.ensurePlayer({
+      hwidHash,
+      playerName: gameState.playerName,
+      elo: profileManager.profile.elo,
+      incrementGames: true,
+    });
     soundManager.selectRandomTrack();
     saveMatchTxt(hwidHash, gameState.serialize(hwidHash));
     sceneManager.setCameraPreset(gameState.humanColor);
@@ -337,6 +351,11 @@ async function bootstrap() {
 
   if (savedNick) {
     gameState.playerName = savedNick;
+    scoreboard.ensurePlayer({
+      hwidHash,
+      playerName: savedNick,
+      elo: profileManager.profile.elo,
+    });
   }
 
   if (salaId) {
@@ -348,6 +367,12 @@ async function bootstrap() {
         onConfirm: (nick) => {
           localStorage.setItem(NICK_KEY, nick);
           gameState.playerName = nick;
+          scoreboard.ensurePlayer({
+            hwidHash,
+            playerName: nick,
+            elo: profileManager.profile.elo,
+            incrementGames: true,
+          });
           updateHud();
           p2p.joinRoom(salaId);
         },
@@ -369,6 +394,12 @@ async function bootstrap() {
         onConfirm: (nick) => {
           localStorage.setItem(NICK_KEY, nick);
           gameState.playerName = nick;
+          scoreboard.ensurePlayer({
+            hwidHash,
+            playerName: nick,
+            elo: profileManager.profile.elo,
+            incrementGames: true,
+          });
           saveMatchTxt(hwidHash, gameState.serialize(hwidHash));
           updateHud();
         },
