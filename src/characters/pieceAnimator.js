@@ -2,6 +2,7 @@ import gsap from 'gsap';
 import {
   IdleAnimation,
   WalkingAnimation,
+  FlyingAnimation,
   HitAnimation,
   WaveAnimation,
   CrouchAnimation,
@@ -17,6 +18,7 @@ export class PieceAnimator {
     this.skinIdle = new IdleAnimation();
     this.skinWalk = new WalkingAnimation();
     this.skinWalk.speed = 1.8;
+    this.skinFly = new FlyingAnimation();
     this.skinHit = new HitAnimation();
     this.skinHit.speed = 2.2;
     this.skinWave = new WaveAnimation();
@@ -33,11 +35,58 @@ export class PieceAnimator {
     const dt = Math.min(0.05, Math.max(0.001, deltaSec));
     for (const piece of pieces) {
       if (!piece || !piece.userData || !piece.userData.parts) continue;
-      const { state, phase, parts, isSkinview, skinPlayer } = piece.userData;
+      const { type, state, phase, parts, isSkinview, skinPlayer, isMinecraftHorse, isMinecraftRook } = piece.userData;
+
+      if (isMinecraftHorse) {
+        if (state === 'moving') {
+          const gallop = Math.sin(elapsedSec * 16 + phase) * 0.65;
+          parts.legFL.rotation.x = gallop;
+          parts.legBR.rotation.x = gallop;
+          parts.legFR.rotation.x = -gallop;
+          parts.legBL.rotation.x = -gallop;
+          parts.head.rotation.x = Math.sin(elapsedSec * 8 + phase) * 0.16;
+          parts.tail.rotation.z = Math.sin(elapsedSec * 12) * 0.25;
+        } else if (state === 'scared') {
+          parts.body.position.x = Math.sin(elapsedSec * 32 + phase) * 0.025;
+          parts.head.rotation.z = Math.sin(elapsedSec * 24) * 0.15;
+        } else {
+          parts.body.position.x = 0;
+          parts.legFL.rotation.x = 0;
+          parts.legFR.rotation.x = 0;
+          parts.legBL.rotation.x = 0;
+          parts.legBR.rotation.x = 0;
+          parts.head.rotation.x = Math.sin(elapsedSec * 1.4 + phase) * 0.08;
+          parts.head.rotation.z = 0;
+          parts.tail.rotation.z = Math.sin(elapsedSec * 2.5 + phase) * 0.12;
+        }
+        continue;
+      }
+
+      if (isMinecraftRook) {
+        if (state === 'moving') {
+          const march = Math.sin(elapsedSec * 10 + phase) * 0.45;
+          parts.rightArm.rotation.x = march;
+          parts.leftArm.rotation.x = -march;
+          parts.body.position.y = 0.12 + Math.abs(Math.sin(elapsedSec * 10 + phase)) * 0.05;
+        } else if (state === 'scared') {
+          parts.body.position.x = Math.sin(elapsedSec * 34 + phase) * 0.02;
+        } else {
+          parts.body.position.x = 0;
+          parts.body.position.y = 0.12 + Math.sin(elapsedSec * 1.8 + phase) * 0.015;
+          parts.rightArm.rotation.x = Math.sin(elapsedSec * 1.2 + phase) * 0.06;
+          parts.leftArm.rotation.x = -Math.sin(elapsedSec * 1.2 + phase) * 0.06;
+          parts.head.rotation.y = Math.sin(elapsedSec * 0.7 + phase) * 0.08;
+        }
+        continue;
+      }
 
       if (isSkinview && skinPlayer) {
         if (state === 'moving') {
-          this.skinWalk.update(skinPlayer, dt);
+          if (type === 'q') {
+            this.skinFly.update(skinPlayer, dt);
+          } else {
+            this.skinWalk.update(skinPlayer, dt);
+          }
         } else if (state === 'attacking') {
           this.skinHit.update(skinPlayer, dt);
         } else if (state === 'victory') {
@@ -48,6 +97,10 @@ export class PieceAnimator {
         } else {
           skinPlayer.position.x = 0;
           this.skinIdle.update(skinPlayer, dt);
+          if (type === 'b' || type === 'q') {
+            // Bispo e Rainha têm levitação suave exclusiva
+            skinPlayer.position.y = 0.54 + Math.sin(elapsedSec * 2.2 + phase) * 0.04;
+          }
         }
         continue;
       }
