@@ -21,7 +21,7 @@ ALLOWED_ORIGINS = os.environ.get(
 MAX_BODY_BYTES = 102400
 
 LOCK = threading.Lock()
-SAFE_ID_RE = re.compile(r"^[a-fA-F0-9a-zA-Z_-]{4,16}$")
+SAFE_ID_RE = re.compile(r"^[a-zA-Z0-9_-]{4,16}$")
 
 
 def sanitize_text(value: str, max_len: int = 32) -> str:
