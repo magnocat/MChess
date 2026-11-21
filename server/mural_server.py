@@ -142,18 +142,21 @@ class MuralHandler(BaseHTTPRequestHandler):
     def _send_cors(self):
         origin = self.headers.get("Origin", "")
         safe_origin = origin.replace("\r", "").replace("\n", "")
-        if origin in ALLOWED_ORIGINS or "*" in ALLOWED_ORIGINS:
-            self.send_header("Access-Control-Allow-Origin", safe_origin or "*")
+        if safe_origin in ALLOWED_ORIGINS:
+            self.send_header("Access-Control-Allow-Origin", safe_origin)
         else:
             self.send_header("Access-Control-Allow-Origin", "https://magnocat.github.io")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Vary", "Origin")
 
     def _send_json(self, code: int, payload: dict):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(code)
         self._send_cors()
         self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -183,7 +186,12 @@ class MuralHandler(BaseHTTPRequestHandler):
             self._send_json(404, {"error": "not_found"})
             return
 
-        length = int(self.headers.get("Content-Length", "0") or 0)
+        try:
+            length = int(self.headers.get("Content-Length", "0") or 0)
+        except ValueError:
+            self._send_json(400, {"error": "invalid_content_length"})
+            return
+
         if length <= 0 or length > MAX_BODY_BYTES:
             self._send_json(400, {"error": "invalid_payload_size"})
             return
@@ -195,6 +203,7 @@ class MuralHandler(BaseHTTPRequestHandler):
             if not isinstance(incoming, list):
                 self._send_json(400, {"error": "invalid_entries"})
                 return
+            incoming = incoming[:100]
         except Exception:
             self._send_json(400, {"error": "invalid_json"})
             return

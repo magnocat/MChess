@@ -423,7 +423,11 @@ export class SceneManager {
       }
 
       this.controls.update();
-      this.renderer.render(this.scene, this.camera);
+      try {
+        this.renderer.render(this.scene, this.camera);
+      } catch {
+        // Mantém o loop ativo mesmo em erro pontual de quadro WebGL
+      }
     };
     tick();
   }
