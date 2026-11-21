@@ -1,4 +1,11 @@
 import gsap from 'gsap';
+import {
+  IdleAnimation,
+  WalkingAnimation,
+  HitAnimation,
+  WaveAnimation,
+  CrouchAnimation,
+} from 'skinview3d';
 
 /**
  * Controla a máquina de estados de animação das peças vivas:
@@ -7,17 +14,43 @@ import gsap from 'gsap';
 export class PieceAnimator {
   constructor() {
     this.activeTweens = new Set();
+    this.skinIdle = new IdleAnimation();
+    this.skinWalk = new WalkingAnimation();
+    this.skinWalk.speed = 1.8;
+    this.skinHit = new HitAnimation();
+    this.skinHit.speed = 2.2;
+    this.skinWave = new WaveAnimation();
+    this.skinCrouch = new CrouchAnimation();
   }
 
   /**
-   * Atualiza respiração e micro-movimentos contínuos a cada quadro.
+   * Atualiza respiração e animações contínuas a cada quadro.
    * @param {Iterable} pieces
    * @param {number} elapsedSec
+   * @param {number} deltaSec
    */
-  updateIdle(pieces, elapsedSec) {
+  updateIdle(pieces, elapsedSec, deltaSec = 0.016) {
+    const dt = Math.min(0.05, Math.max(0.001, deltaSec));
     for (const piece of pieces) {
       if (!piece || !piece.userData || !piece.userData.parts) continue;
-      const { state, phase, parts } = piece.userData;
+      const { state, phase, parts, isSkinview, skinPlayer } = piece.userData;
+
+      if (isSkinview && skinPlayer) {
+        if (state === 'moving') {
+          this.skinWalk.update(skinPlayer, dt);
+        } else if (state === 'attacking') {
+          this.skinHit.update(skinPlayer, dt);
+        } else if (state === 'victory') {
+          this.skinWave.update(skinPlayer, dt);
+        } else if (state === 'scared') {
+          this.skinCrouch.update(skinPlayer, dt);
+          skinPlayer.position.x = Math.sin(elapsedSec * 32 + phase) * 0.6;
+        } else {
+          skinPlayer.position.x = 0;
+          this.skinIdle.update(skinPlayer, dt);
+        }
+        continue;
+      }
 
       if (state === 'idle' || state === 'selected') {
         const breath = Math.sin(elapsedSec * 2.4 + phase) * 0.025;

@@ -29,6 +29,7 @@
     "chess.js": "^1.0.0-beta.8",
     "gsap": "^3.12.5",
     "peerjs": "^1.5.4",
+    "skinview3d": "^3.4.2",
     "three": "^0.170.0"
   },
   "devDependencies": {

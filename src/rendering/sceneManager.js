@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { applyPiecePalette, buildLivingPiece, createPieceMaterials } from '../characters/pieceBuilder.js';
+import { buildSkinviewPiece } from '../characters/skinviewPieceBuilder.js';
 import { PieceAnimator } from '../characters/pieceAnimator.js';
 import { getBiomeForSeed, ProceduralWorld } from './proceduralWorld.js';
 
@@ -24,6 +25,7 @@ export class SceneManager {
     this.onSquareClick = onSquareClick;
     this.lowQuality = /Mobi|Android/i.test(navigator.userAgent);
     this.specialMode = !this.lowQuality;
+    this.animatedMode = false;
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(
@@ -116,6 +118,13 @@ export class SceneManager {
     this.specialMode = Boolean(enabled);
   }
 
+  setAnimatedMode(enabled, engine = null) {
+    this.animatedMode = Boolean(enabled);
+    if (engine) {
+      this.syncBoard(engine);
+    }
+  }
+
   buildBoardSquares(seed) {
     this.currentSeed = seed;
     while (this.boardGroup.children.length > 0) {
@@ -165,13 +174,16 @@ export class SceneManager {
     }
     this.pieceMeshes.clear();
 
+    const useSkinview = this.animatedMode && !this.lowQuality;
     const board = engine.getBoard();
     for (let r = 0; r < 8; r += 1) {
       for (let c = 0; c < 8; c += 1) {
         const cell = board[r][c];
         if (!cell) continue;
         const square = `${FILES[c]}${8 - r}`;
-        const piece = buildLivingPiece(cell.type, cell.color, this.pieceMaterials);
+        const piece = useSkinview
+          ? buildSkinviewPiece(cell.type, cell.color, this.colorPalette, this.pieceMaterials)
+          : buildLivingPiece(cell.type, cell.color, this.pieceMaterials);
         const pos = squareToWorld(square);
         piece.position.set(pos.x, 0, pos.z);
         piece.userData.square = square;
@@ -377,10 +389,12 @@ export class SceneManager {
   }
 
   startLoop() {
+    let elapsed = 0;
     const tick = () => {
       requestAnimationFrame(tick);
-      const elapsed = this.clock.getElapsedTime();
-      this.animator.updateIdle(this.pieceMeshes.values(), elapsed);
+      const delta = this.clock.getDelta();
+      elapsed += delta;
+      this.animator.updateIdle(this.pieceMeshes.values(), elapsed, delta);
       this.world.update(elapsed);
 
       for (let i = this.endEffects.length - 1; i >= 0; i -= 1) {

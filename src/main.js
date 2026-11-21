@@ -95,6 +95,8 @@ async function bootstrap() {
   if (lowQualityChk) lowQualityChk.checked = sceneManager.lowQuality;
   const specialModeChk = document.getElementById('chk-special-mode');
   if (specialModeChk) specialModeChk.checked = sceneManager.specialMode;
+  const animatedModeChk = document.getElementById('chk-animated-mode');
+  if (animatedModeChk) animatedModeChk.checked = sceneManager.animatedMode;
 
   const p2p = new P2PManager({
     onStatus: (msg, url) => {
@@ -432,6 +434,9 @@ async function bootstrap() {
       a11y,
       onPaletteChange: (palette) => {
         sceneManager.setColorPalette(palette);
+        if (sceneManager.animatedMode) {
+          sceneManager.syncBoard(gameState.engine);
+        }
         sceneManager.showHighlights(
           selectedSquare,
           legalMovesForSelected,
@@ -549,15 +554,31 @@ async function bootstrap() {
   document.getElementById('btn-cam-top').addEventListener('click', () => sceneManager.setCameraPreset('top'));
   document.getElementById('chk-low-quality').addEventListener('change', (ev) => {
     sceneManager.setLowQuality(ev.target.checked);
-    if (ev.target.checked && specialModeChk) {
-      specialModeChk.checked = false;
-      sceneManager.setSpecialMode(false);
+    if (ev.target.checked) {
+      if (specialModeChk) {
+        specialModeChk.checked = false;
+        sceneManager.setSpecialMode(false);
+      }
+      if (animatedModeChk) {
+        animatedModeChk.checked = false;
+        sceneManager.setAnimatedMode(false, gameState.engine);
+      }
     }
   });
   if (specialModeChk) {
     specialModeChk.addEventListener('change', (ev) => {
       sceneManager.setSpecialMode(ev.target.checked);
       showSubtitle(ev.target.checked ? 'Modo Especial ativado: finalizações exclusivas!' : 'Modo Especial desativado.');
+    });
+  }
+  if (animatedModeChk) {
+    animatedModeChk.addEventListener('change', (ev) => {
+      sceneManager.setAnimatedMode(ev.target.checked, gameState.engine);
+      showSubtitle(
+        ev.target.checked
+          ? 'Modo Animado (Skinview3D) ativado: peças com animação fluida!'
+          : 'Modo Animado desativado.',
+      );
     });
   }
 
