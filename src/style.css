@@ -281,7 +281,8 @@ button.danger {
 
 .modal-body input[type='text'],
 .modal-body input[type='password'],
-.modal-body input[type='file'] {
+.modal-body input[type='file'],
+.modal-body select {
   width: 100%;
   padding: 0.45rem;
   border-radius: 6px;

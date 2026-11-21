@@ -2,6 +2,7 @@ import { sanitizeText, isValidHwidHash } from '../security/sanitizer.js';
 import { downloadTxtFile } from '../storage/txtStorage.js';
 import { MUSIC_TRACKS } from '../audio/soundManager.js';
 import { COLOR_MODES } from '../accessibility/accessibilityManager.js';
+import { mountAdminPieceStudio } from './adminStudio.js';
 
 /**
  * Controla os modais e a interface do usuário usando apenas DOM seguro (sem innerHTML).
@@ -11,13 +12,24 @@ export class UIController {
     this.modal = document.getElementById('app-modal');
     this.modalTitle = document.getElementById('modal-title');
     this.modalBody = document.getElementById('modal-body');
+    this.cleanupModal = null;
 
     document.getElementById('modal-close').addEventListener('click', () => {
       this.closeModal();
     });
+    this.modal.addEventListener('close', () => {
+      if (this.cleanupModal) {
+        this.cleanupModal();
+        this.cleanupModal = null;
+      }
+    });
   }
 
   openModal(title, builderFn) {
+    if (this.cleanupModal) {
+      this.cleanupModal();
+      this.cleanupModal = null;
+    }
     this.modalTitle.textContent = title;
     this.modalBody.replaceChildren();
     builderFn(this.modalBody);
@@ -25,6 +37,10 @@ export class UIController {
   }
 
   closeModal() {
+    if (this.cleanupModal) {
+      this.cleanupModal();
+      this.cleanupModal = null;
+    }
     if (this.modal.open) this.modal.close();
   }
 
@@ -425,6 +441,25 @@ export class UIController {
       });
       aiCard.append(btnAiVsAi);
 
+      const btnStudio = this.el('button', 'Visualizador de Peças (Stand Alone)', 'primary');
+      btnStudio.addEventListener('click', () => {
+        this.openModal('ADMIN — Visualizador Stand Alone', (studioBody) => {
+          const btnBack = this.el('button', 'Voltar ao Painel ADMIN');
+          btnBack.addEventListener('click', () => {
+            this.openAdminModal({
+              adminAuth,
+              scoreboard,
+              profileManager,
+              adminAiStats,
+              onStartAiVsAi,
+              onResetAll,
+            });
+          });
+          studioBody.append(btnBack);
+          this.cleanupModal = mountAdminPieceStudio(studioBody, this);
+        });
+      });
+
       const agentLink = this.el('a', 'Abrir Modo Agente (WebMCP)', 'btn-link');
       agentLink.href = './agent.html';
 
@@ -465,6 +500,7 @@ export class UIController {
 
       body.append(
         status,
+        btnStudio,
         aiCard,
         agentLink,
         btnExportMural,

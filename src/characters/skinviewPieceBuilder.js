@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { PlayerObject } from 'skinview3d';
+import { createPieceLabelSprite } from './pieceBuilder.js';
 
 const SKIN_TEX_CACHE = new Map();
 const BASE_GEO = new THREE.CylinderGeometry(0.36, 0.4, 0.12, 16);
@@ -327,11 +328,14 @@ export function buildSkinviewPiece(type, color, palette, materials) {
     root.add(horse.body);
     root.rotation.y = color === 'w' ? Math.PI : 0;
     patchThree170Compat(root);
+    const labelSprite = createPieceLabelSprite(type, color);
+    root.add(labelSprite);
     root.userData = {
       type,
       color,
       state: 'idle',
       phase: Math.random() * Math.PI * 2,
+      labelSprite,
       isSkinview: false,
       isMinecraftHorse: true,
       parts: horse.parts,
@@ -344,11 +348,14 @@ export function buildSkinviewPiece(type, color, palette, materials) {
     root.add(rook.body);
     root.rotation.y = color === 'w' ? Math.PI : 0;
     patchThree170Compat(root);
+    const labelSprite = createPieceLabelSprite(type, color);
+    root.add(labelSprite);
     root.userData = {
       type,
       color,
       state: 'idle',
       phase: Math.random() * Math.PI * 2,
+      labelSprite,
       isSkinview: false,
       isMinecraftRook: true,
       parts: rook.parts,
@@ -401,6 +408,9 @@ export function buildSkinviewPiece(type, color, palette, materials) {
     mitre.rotation.y = Math.PI / 4;
     mitre.position.set(0, 11.5, 0);
     player.skin.head.add(mitre);
+    const cape = new THREE.Mesh(new THREE.BoxGeometry(8, 12, 1), accentMat);
+    cape.position.set(0, -1, -2.8);
+    player.skin.body.add(cape);
     const staff = new THREE.Mesh(new THREE.BoxGeometry(1.1, 18, 1.1), accentMat);
     staff.position.set(0, -4, 4.5);
     staff.rotation.x = Math.PI / 5;
@@ -426,11 +436,15 @@ export function buildSkinviewPiece(type, color, palette, materials) {
   root.rotation.y = color === 'w' ? Math.PI : 0;
   patchThree170Compat(root);
 
+  const labelSprite = createPieceLabelSprite(type, color);
+  root.add(labelSprite);
+
   root.userData = {
     type,
     color,
     state: 'idle',
     phase: Math.random() * Math.PI * 2,
+    labelSprite,
     isSkinview: true,
     skinPlayer: player,
     parts: {

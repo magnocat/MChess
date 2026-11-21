@@ -75,6 +75,55 @@ export function applyPiecePalette(materials, palette) {
   }
 }
 
+const PIECE_LABELS = {
+  k: 'Rei',
+  q: 'Rainha',
+  b: 'Bispo',
+  n: 'Cavalo',
+  r: 'Torre',
+  p: 'Peão',
+};
+
+const LABEL_MAT_CACHE = new Map();
+
+export function createPieceLabelSprite(type, color) {
+  const key = `${type}_${color}`;
+  let mat = LABEL_MAT_CACHE.get(key);
+  if (!mat) {
+    const label = PIECE_LABELS[type] || 'Peça';
+    const canvas = document.createElement('canvas');
+    canvas.width = 192;
+    canvas.height = 56;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = color === 'w' ? 'rgba(248, 250, 252, 0.92)' : 'rgba(15, 23, 42, 0.92)';
+      ctx.strokeStyle = color === 'w' ? '#0f172a' : '#facc15';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.roundRect(6, 6, 180, 44, 14);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = color === 'w' ? '#0f172a' : '#f8fafc';
+      ctx.font = 'bold 24px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, 96, 29);
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.needsUpdate = true;
+    mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+    LABEL_MAT_CACHE.set(key, mat);
+  }
+  const sprite = new THREE.Sprite(mat);
+  const yPos = type === 'k' ? 1.48 : type === 'q' ? 1.4 : type === 'p' ? 1.08 : 1.28;
+  sprite.position.set(0, yPos, 0);
+  sprite.scale.set(0.72, 0.22, 1);
+  sprite.name = 'piece-label';
+  sprite.renderOrder = 10;
+  return sprite;
+}
+
 function getRoleAccentMaterial(type, color, materials) {
   const isW = color === 'w';
   switch (type) {
@@ -224,11 +273,14 @@ export function buildLivingPiece(type, color, materials) {
     head.add(neck, muzzle, mane, earL, earR);
     body.add(head);
   } else if (type === 'b') {
-    // Bispo: Clérigo real com mitra e cajado mágico
+    // Bispo: Clérigo real com capa, mitra e cajado mágico
     const robe = new THREE.Mesh(SHARED_GEO.torso, mainMat);
     robe.position.y = 0.26;
     robe.scale.set(0.95, 1.15, 0.95);
-    body.add(robe);
+    const cape = new THREE.Mesh(SHARED_GEO.cape, accentMat);
+    cape.position.set(0, 0.28, -0.19);
+    cape.rotation.x = 0.14;
+    body.add(robe, cape);
 
     head.position.y = 0.62;
     const skull = new THREE.Mesh(SHARED_GEO.head, mainMat);
@@ -312,11 +364,15 @@ export function buildLivingPiece(type, color, materials) {
     }
   });
 
+  const labelSprite = createPieceLabelSprite(type, color);
+  root.add(labelSprite);
+
   root.userData = {
     type,
     color,
     state: 'idle',
     phase: Math.random() * Math.PI * 2,
+    labelSprite,
     parts: { body, head, rightArm, leftArm },
   };
 

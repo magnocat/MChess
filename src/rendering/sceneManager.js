@@ -187,6 +187,9 @@ export class SceneManager {
         const pos = squareToWorld(square);
         piece.position.set(pos.x, 0, pos.z);
         piece.userData.square = square;
+        if (piece.userData.labelSprite) {
+          piece.userData.labelSprite.visible = this.cameraPreset !== 'top';
+        }
         this.piecesGroup.add(piece);
         this.pieceMeshes.set(square, piece);
       }
@@ -290,12 +293,18 @@ export class SceneManager {
   }
 
   setCameraPreset(preset) {
+    this.cameraPreset = preset;
     if (preset === 'w') {
       this.camera.position.set(0, 7.2, 8.2);
     } else if (preset === 'b') {
       this.camera.position.set(0, 7.2, -8.2);
     } else if (preset === 'top') {
       this.camera.position.set(0, 12.0, 0.01);
+    }
+    for (const p of this.pieceMeshes.values()) {
+      if (p.userData.labelSprite) {
+        p.userData.labelSprite.visible = preset !== 'top';
+      }
     }
     this.controls.target.set(0, 0, 0);
     this.controls.update();
