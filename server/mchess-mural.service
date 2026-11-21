@@ -1,0 +1,16 @@
+[Unit]
+Description=MChess 3D - Servidor Universal do Mural
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/mchess-mural
+Environment=PORT=8098
+Environment=MURAL_FILE=/var/lib/mchess-mural/mural-global.txt
+ExecStart=/usr/bin/python3 /opt/mchess-mural/mural_server.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

@@ -418,7 +418,8 @@ async function bootstrap() {
     });
   });
 
-  document.getElementById('btn-scoreboard').addEventListener('click', () => {
+  document.getElementById('btn-scoreboard').addEventListener('click', async () => {
+    await scoreboard.syncFromGlobalTxt();
     ui.openScoreboardModal(scoreboard);
   });
 

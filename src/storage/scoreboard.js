@@ -103,6 +103,9 @@ export class ScoreboardManager {
     entry.updatedAt = new Date().toISOString();
 
     this.sortAndSave();
+    if (incrementGames) {
+      this.pushToRemoteEndpoint();
+    }
     return entry;
   }
 

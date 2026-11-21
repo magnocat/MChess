@@ -34,6 +34,7 @@ jobs:
         env:
           VITE_BASE_PATH: /MChess/
           VITE_ADMIN_PASS_HASH: ${{ secrets.VITE_ADMIN_PASS_HASH }}
+          VITE_MURAL_ENDPOINT: ${{ vars.VITE_MURAL_ENDPOINT || 'https://mural.magnocat.net/api/mural' }}
         run: npm run build
 
       - name: Enviar artefato do Pages
