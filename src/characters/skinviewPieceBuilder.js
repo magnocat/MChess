@@ -165,6 +165,39 @@ function createProceduralSkinTexture(type, color, palette) {
   return texture;
 }
 
+const TEXTURE_LOADER = new THREE.TextureLoader();
+
+function getPieceSkinTexture(type, color, palette, onUpdate) {
+  const paletteId = palette?.id || 'normal';
+  const fallbackTex = createProceduralSkinTexture(type, color, palette);
+  if (paletteId !== 'normal') {
+    return fallbackTex;
+  }
+
+  const customKey = `custom_${type}_${color}`;
+  if (SKIN_TEX_CACHE.has(customKey)) {
+    return SKIN_TEX_CACHE.get(customKey);
+  }
+
+  TEXTURE_LOADER.load(
+    `./skins/${color}_${type}.png`,
+    (loadedTex) => {
+      loadedTex.magFilter = THREE.NearestFilter;
+      loadedTex.minFilter = THREE.NearestFilter;
+      loadedTex.colorSpace = THREE.SRGBColorSpace;
+      loadedTex.needsUpdate = true;
+      SKIN_TEX_CACHE.set(customKey, loadedTex);
+      if (onUpdate) onUpdate(loadedTex);
+    },
+    undefined,
+    () => {
+      // Mantém textura procedural se o arquivo não existir
+    },
+  );
+
+  return fallbackTex;
+}
+
 function patchThree170Compat(root) {
   root.traverse((child) => {
     if (typeof child.onBeforeShadow !== 'function') child.onBeforeShadow = () => {};
@@ -179,8 +212,11 @@ function patchThree170Compat(root) {
 }
 
 function buildMinecraftHorse(color, palette, mainMat, accentMat, eyeMat) {
-  const tex = createProceduralSkinTexture('n', color, palette);
-  const horseMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.55, metalness: 0.1 });
+  const horseMat = new THREE.MeshStandardMaterial({ roughness: 0.55, metalness: 0.1 });
+  horseMat.map = getPieceSkinTexture('n', color, palette, (loaded) => {
+    horseMat.map = loaded;
+    horseMat.needsUpdate = true;
+  });
 
   const body = new THREE.Group();
   body.position.y = 0.12;
@@ -256,8 +292,11 @@ function buildMinecraftHorse(color, palette, mainMat, accentMat, eyeMat) {
 }
 
 function buildMinecraftRook(color, palette, accentMat, eyeMat) {
-  const tex = createProceduralSkinTexture('r', color, palette);
-  const stoneMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.65, metalness: 0.15 });
+  const stoneMat = new THREE.MeshStandardMaterial({ roughness: 0.65, metalness: 0.15 });
+  stoneMat.map = getPieceSkinTexture('r', color, palette, (loaded) => {
+    stoneMat.map = loaded;
+    stoneMat.needsUpdate = true;
+  });
 
   const body = new THREE.Group();
   body.position.y = 0.12;
@@ -365,11 +404,13 @@ export function buildSkinviewPiece(type, color, palette, materials) {
 
   // Rei, Rainha, Bispo e Peão usam PlayerObject (skinview3d) + adereços 3D exclusivos
   const player = new PlayerObject();
-  const tex = createProceduralSkinTexture(type, color, palette);
-  player.skin.layer1Material.map = tex;
-  player.skin.layer1Material.needsUpdate = true;
-  player.skin.layer2Material.map = tex;
-  player.skin.layer2Material.needsUpdate = true;
+  const applyPlayerTex = (tex) => {
+    player.skin.layer1Material.map = tex;
+    player.skin.layer1Material.needsUpdate = true;
+    player.skin.layer2Material.map = tex;
+    player.skin.layer2Material.needsUpdate = true;
+  };
+  applyPlayerTex(getPieceSkinTexture(type, color, palette, applyPlayerTex));
 
   // Adereços 3D na escala interna do skinview3d (1 bloco ~ 8 unidades)
   if (type === 'k') {

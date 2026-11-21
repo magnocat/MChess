@@ -1,0 +1,31 @@
+name: Relato de Erro ou Sugestão
+description: Reporte um problema real ou proponha uma melhoria objetiva.
+title: "[Relato]: "
+labels: ["triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Este repositório filtra mensagens genéricas ou geradas em massa por bots/IA.
+        Descreva o problema de forma objetiva e reproduzível.
+  - type: textarea
+    id: description
+    attributes:
+      label: Descrição objetiva
+      description: O que aconteceu ou o que você propõe?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para reproduzir
+      description: Informe exatamente como reproduzir no navegador.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Confirmação
+      options:
+        - label: Testei na versão atual do site ou localmente com npm run dev.
+          required: true

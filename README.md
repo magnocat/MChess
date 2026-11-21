@@ -93,7 +93,9 @@ Leia os detalhes completos em [Guia de Acessibilidade e LGPD](docs/ACCESSIBILITY
 ## 📚 Documentação Técnica
 
 - [Arquitetura do Sistema](docs/ARCHITECTURE.md)
+- [Skins, Modo Animado e Finalizações](docs/SKINS.md)
 - [Acessibilidade, Inclusão e LGPD](docs/ACCESSIBILITY.md)
+- [Mural Universal na VPS](docs/VPS_MURAL.md)
 - [Segurança e Gestão de Segredos](docs/SECURITY.md)
 - [Inteligência Artificial Adaptativa](docs/AI.md)
 - [Persistência em .TXT e HWID](docs/STORAGE.md)
