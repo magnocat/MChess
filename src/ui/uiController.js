@@ -233,26 +233,34 @@ export class UIController {
   }
 
   openScoreboardModal(scoreboard) {
-    this.openModal('Mural de Pontuação (Jogadores Humanos)', (body) => {
-      const entries = scoreboard.getTopEntries(20);
-      if (entries.length === 0) {
-        body.append(this.el('p', 'Nenhum jogador registrado ainda.'));
-      } else {
+    this.openModal('Mural Global (Top 50 — Jogadores Humanos)', (body) => {
+      let activeCat = 'geral';
+      const tabsRow = this.el('div', '', 'btn-row');
+      const contentBox = this.el('div', '', 'mural-content');
+
+      const formatPlayerLabel = (item) => {
+        const short8 = item.shortId.slice(0, 8);
+        const nick = item.playerName ? item.playerName.trim() : '';
+        const hasNick = nick && nick !== item.shortId && !item.shortId.startsWith(nick) && nick !== 'Anônimo';
+        return hasNick ? `${nick} (${short8})` : short8;
+      };
+
+      const buildTable = (list, startRank) => {
         const table = this.el('table', '', 'score-table');
         const thead = this.el('thead');
         const trHead = this.el('tr');
-        ['Nick', 'HWID', 'Pts', 'Partidas', 'Lances', 'V/E/D', 'Elo'].forEach((h) =>
+        ['#', 'Jogador (Nick / HWID)', 'Pts', 'Partidas', 'Lances', 'V/E/D', 'Elo'].forEach((h) =>
           trHead.append(this.el('th', h)),
         );
         thead.append(trHead);
         table.append(thead);
 
         const tbody = this.el('tbody');
-        for (const item of entries) {
+        list.forEach((item, idx) => {
           const tr = this.el('tr');
           tr.append(
-            this.el('td', item.playerName),
-            this.el('td', item.shortId.slice(0, 8)),
+            this.el('td', `${startRank + idx}º`),
+            this.el('td', formatPlayerLabel(item)),
             this.el('td', String(item.points)),
             this.el('td', String(item.games ?? item.wins + item.draws + item.losses)),
             this.el('td', String(item.moves ?? 0)),
@@ -260,16 +268,54 @@ export class UIController {
             this.el('td', String(item.elo)),
           );
           tbody.append(tr);
-        }
+        });
         table.append(tbody);
-        body.append(table);
+        return table;
+      };
+
+      const renderCategory = (cat) => {
+        activeCat = cat;
+        for (const btn of tabsRow.children) {
+          btn.classList.toggle('primary', btn.dataset.cat === activeCat);
+        }
+        contentBox.replaceChildren();
+        const entries = scoreboard.getRanking(cat, 50);
+        if (entries.length === 0) {
+          contentBox.append(this.el('p', 'Nenhum registro nesta categoria ainda.'));
+          return;
+        }
+
+        const top10 = entries.slice(0, 10);
+        const rest = entries.slice(10, 50);
+
+        contentBox.append(this.el('h2', 'Top 10 — Elite'));
+        contentBox.append(buildTable(top10, 1));
+
+        if (rest.length > 0) {
+          contentBox.append(this.el('h2', 'Classificação (11º ao 50º)'));
+          contentBox.append(buildTable(rest, 11));
+        }
+      };
+
+      const categories = [
+        ['geral', 'Geral (Histórico)'],
+        ['mensal', 'Mensal'],
+        ['diaria', 'Diária'],
+      ];
+      for (const [catId, label] of categories) {
+        const btn = this.el('button', label, catId === 'geral' ? 'primary' : '');
+        btn.dataset.cat = catId;
+        btn.addEventListener('click', () => renderCategory(catId));
+        tabsRow.append(btn);
       }
 
       const infoGlobal = this.el(
         'p',
-        'Classificação global de jogadores humanos. Vitória: 3 pts | Empate: 1 pt.',
+        'Classificação de jogadores humanos. Vitória: 3 pts | Empate: 1 pt. Salve seu HWID para manter o histórico.',
       );
-      body.append(infoGlobal);
+
+      body.append(tabsRow, contentBox, infoGlobal);
+      renderCategory('geral');
     });
   }
 
