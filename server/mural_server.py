@@ -141,8 +141,9 @@ def merge_and_sort(current: list, incoming: list) -> list:
 class MuralHandler(BaseHTTPRequestHandler):
     def _send_cors(self):
         origin = self.headers.get("Origin", "")
+        safe_origin = origin.replace("\r", "").replace("\n", "")
         if origin in ALLOWED_ORIGINS or "*" in ALLOWED_ORIGINS:
-            self.send_header("Access-Control-Allow-Origin", origin or "*")
+            self.send_header("Access-Control-Allow-Origin", safe_origin or "*")
         else:
             self.send_header("Access-Control-Allow-Origin", "https://magnocat.github.io")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
