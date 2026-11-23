@@ -14,6 +14,7 @@ import { parseSafeTxtPayload } from './security/sanitizer.js';
 import { registerAgentLayer } from './agent/webmcp.js';
 import { UIController } from './ui/uiController.js';
 import { AccessibilityManager } from './accessibility/accessibilityManager.js';
+import { LearningView } from './learning/learningView.js';
 
 async function bootstrap() {
   let hwidHash = await getOrCreateHwidHash();
@@ -366,9 +367,17 @@ async function bootstrap() {
     }
   }
 
+  const learningView = new LearningView(document.getElementById('learning-overlay'), {
+    onClose: () => {},
+    onNarrate: (txt) => a11y.narrate(txt, (t) => showSubtitle(t, 4000)),
+  });
+
   // Botões da barra superior
   document.getElementById('btn-new-game').addEventListener('click', () => {
     ui.openNewGameModal({ currentName: gameState.playerName, onStart: startNewGame });
+  });
+  document.getElementById('btn-learning').addEventListener('click', () => {
+    learningView.open(gameState.engine.getStatus().historySan);
   });
 
   document.getElementById('btn-p2p').addEventListener('click', () => {
