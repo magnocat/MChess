@@ -6,6 +6,7 @@ import {
   createPieceMaterials,
 } from '../characters/pieceBuilder.js';
 import { buildSkinviewPiece } from '../characters/skinviewPieceBuilder.js';
+import { buildAnimalPiece } from '../characters/animalsPieceBuilder.js';
 import { PieceAnimator } from '../characters/pieceAnimator.js';
 import { COLOR_MODES } from '../accessibility/accessibilityManager.js';
 
@@ -19,28 +20,15 @@ const PIECE_NAMES = {
 };
 
 function describeFinisherId(aType, dType) {
-  if (aType === 'n') {
-    if (dType === 'q' || dType === 'k') return `${aType} -> ${dType} (Coice Real)`;
-    if (dType === 'p') return `${aType} -> ${dType} (Salto Esmagador)`;
-    return `${aType} -> ${dType} (Investida de Galope)`;
-  }
-  if (aType === 'p') {
-    if (dType === 'q' || dType === 'r') return `${aType} -> ${dType} (Salto Heroico com Lança)`;
-    return `${aType} -> ${dType} (Escudada + Estocada)`;
-  }
-  if (aType === 'r') {
-    if (dType === 'p' || dType === 'n') return `${aType} -> ${dType} (Esmagamento Sísmico)`;
-    return `${aType} -> ${dType} (Golpe Duplo em Pinça)`;
-  }
-  if (aType === 'b') {
-    if (dType === 'p' || dType === 'r') return `${aType} -> ${dType} (Raio do Cajado)`;
-    return `${aType} -> ${dType} (Vórtice Arcano 360)`;
-  }
-  if (aType === 'q') {
-    if (dType === 'p' || dType === 'n') return `${aType} -> ${dType} (Pirueta com Cetro)`;
-    return `${aType} -> ${dType} (Execução Soberana)`;
-  }
-  return `${aType} -> ${dType} (Sentença do Rei)`;
+  const map = {
+    p: '3 variações Battle Chess (Salto + Lança / Escudo Giratório / Combo Duplo)',
+    n: '3 variações Battle Chess (Coice Real / Salto Esmagador / Empinada)',
+    r: '3 variações Battle Chess (Impacto Sísmico / Pinça de Titã / Giro Aríete)',
+    b: '3 variações Battle Chess (Levitação Arcana / Vórtice 360 / Sopro Sagrado)',
+    q: '3 variações Battle Chess (Pirueta Real / Execução Soberana / Onda Imperial)',
+    k: '3 variações Battle Chess (Sentença Real / Giro 360 / Decreto Real)',
+  };
+  return `${aType} -> ${dType} (${map[aType] || map.p})`;
 }
 
 /**
@@ -136,9 +124,11 @@ export function mountAdminPieceStudio(container, ui) {
 
   const createPieceForStudio = (type, color, palette) => {
     const piece =
-      state.modelMode === 'animated'
-        ? buildSkinviewPiece(type, color, palette, materials)
-        : buildLivingPiece(type, color, materials);
+      state.modelMode === 'animals'
+        ? buildAnimalPiece(type, color, materials)
+        : state.modelMode === 'animated'
+          ? buildSkinviewPiece(type, color, palette, materials)
+          : buildLivingPiece(type, color, materials);
     if (piece.userData.labelSprite) {
       piece.userData.labelSprite.visible = true;
     }
@@ -226,6 +216,7 @@ export function mountAdminPieceStudio(container, ui) {
       'Modelo (ID)',
       [
         ['animated', 'animated (Modo Animado)'],
+        ['animals', 'animals (Animals Game IK)'],
         ['classic', 'classic (Clássico)'],
       ],
       state.modelMode,

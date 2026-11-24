@@ -318,18 +318,39 @@ export class SceneManager {
   }
 
   /**
-   * Executa a animação 3D do lance (com combate se houver captura) e sincroniza.
+   * Executa a animação 3D do lance (com câmera cinemática Battle Chess na captura) e sincroniza.
    */
   async playMoveAnimation(moveObj, engine) {
     this.isAnimatingMove = true;
     const attacker = this.pieceMeshes.get(moveObj.from);
     const defender = this.pieceMeshes.get(moveObj.to);
     const targetPos = squareToWorld(moveObj.to);
+    const useCinematic = Boolean(
+      this.specialMode && !this.lowQuality && moveObj.captured && attacker && defender,
+    );
 
     if (attacker) {
       await this.animator.animateMove(attacker, targetPos, moveObj.piece === 'n');
       if (moveObj.captured && defender) {
-        await this.animator.animateCombat(attacker, defender, this.specialMode && !this.lowQuality);
+        if (useCinematic) {
+          const prevCamPos = this.camera.position.clone();
+          const prevTarget = this.controls.target.clone();
+          this.controls.enabled = false;
+          const sideSign = moveObj.color === 'w' ? 1 : -1;
+          const cineCamX = Math.max(-4.8, Math.min(4.8, targetPos.x + 2.1));
+          const cineCamZ = Math.max(-5.2, Math.min(5.2, targetPos.z + 2.2 * sideSign));
+
+          await this.tweenCamera(
+            { x: cineCamX, y: 1.65, z: cineCamZ },
+            { x: targetPos.x, y: 0.45, z: targetPos.z },
+            0.35,
+          );
+          await this.animator.animateCombat(attacker, defender, true);
+          await this.tweenCamera(prevCamPos, prevTarget, 0.35);
+          this.controls.enabled = true;
+        } else {
+          await this.animator.animateCombat(attacker, defender, this.specialMode && !this.lowQuality);
+        }
       }
     }
 
@@ -343,6 +364,38 @@ export class SceneManager {
       }
     }
     this.isAnimatingMove = false;
+  }
+
+  tweenCamera(pos, target, duration = 0.35) {
+    return new Promise((resolve) => {
+      const startPos = this.camera.position.clone();
+      const startTarget = this.controls.target.clone();
+      const state = { t: 0 };
+      const startedAt = performance.now();
+      const step = (now) => {
+        const elapsed = (now - startedAt) / 1000;
+        const raw = Math.min(1, elapsed / duration);
+        const ease = raw < 0.5 ? 2 * raw * raw : 1 - ((-2 * raw + 2) ** 2) / 2;
+        state.t = ease;
+        this.camera.position.set(
+          startPos.x + (pos.x - startPos.x) * ease,
+          startPos.y + (pos.y - startPos.y) * ease,
+          startPos.z + (pos.z - startPos.z) * ease,
+        );
+        this.controls.target.set(
+          startTarget.x + (target.x - startTarget.x) * ease,
+          startTarget.y + (target.y - startTarget.y) * ease,
+          startTarget.z + (target.z - startTarget.z) * ease,
+        );
+        this.controls.update();
+        if (raw < 1) {
+          requestAnimationFrame(step);
+        } else {
+          resolve();
+        }
+      };
+      requestAnimationFrame(step);
+    });
   }
 
   setCameraPreset(preset) {
