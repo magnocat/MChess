@@ -8,6 +8,7 @@ const smooth = (t) => t * t * (3 - 2 * t);
 
 const CUBE_GEO = new THREE.BoxGeometry(1, 1, 1);
 const RIM_GEO = new THREE.TorusGeometry(0.39, 0.022, 8, 24);
+const GLINT_MAT = new THREE.MeshStandardMaterial({ color: '#eee8ce', roughness: 0.5 });
 const UNIT_Y = new THREE.Vector3(0, 1, 0);
 const DIR_VEC = new THREE.Vector3();
 const MID_VEC = new THREE.Vector3();
@@ -176,15 +177,25 @@ function buildWildHorse(color, accentMat, eyeMat, glintMat) {
   }
 
   let gaitPhase = 0.17;
+  let hasIdlePose = false;
   const animate = (dt, speed, elapsed) => {
+    const isMoving = speed > 0.15;
+    if (!isMoving && hasIdlePose) {
+      ears.forEach((ear, i) => {
+        ear.rotation.x = 0.05 * Math.sin(elapsed * 0.9 + i * 2);
+      });
+      tail.rotation.x = 0.75 + 0.06 * Math.sin(elapsed * 1.4);
+      return;
+    }
+
     const stride = 4.8 + speed * 0.07;
     gaitPhase = (gaitPhase + (dt * speed) / stride) % 1;
     const wave = TAU * gaitPhase;
-    body.position.y = 1.46 + 0.06 * Math.cos(wave + 0.55);
+    body.position.y = 1.46 + (isMoving ? 0.06 * Math.cos(wave + 0.55) : 0);
     body.rotation.x = speed > 0.2 ? 0.055 * Math.sin(wave - 0.5) : 0;
     body.updateMatrix();
-    neck.rotation.x = 0.43 - 0.025 * Math.sin(wave - 0.65);
-    head.rotation.x = -0.28 + 0.025 * Math.sin(wave - 1);
+    neck.rotation.x = 0.43 - (isMoving ? 0.025 * Math.sin(wave - 0.65) : 0);
+    head.rotation.x = -0.28 + (isMoving ? 0.025 * Math.sin(wave - 1) : 0);
     ears.forEach((ear, i) => {
       ear.rotation.x = 0.05 * Math.sin(elapsed * 0.9 + i * 2);
     });
@@ -201,7 +212,7 @@ function buildWildHorse(color, accentMat, eyeMat, glintMat) {
       const down = p < stance;
       let z;
       let y;
-      if (speed <= 0.15) {
+      if (!isMoving) {
         z = 0;
         y = 0.1;
       } else if (down) {
@@ -241,6 +252,8 @@ function buildWildHorse(color, accentMat, eyeMat, glintMat) {
       leg.joint.position.copy(leg.knee);
       leg.hoof.position.copy(leg.foot);
     }
+
+    hasIdlePose = !isMoving;
   };
 
   animate(0, 0, 0);
@@ -359,11 +372,19 @@ function buildWildQuadruped(animalKind, color, accentMat, eyeMat, glintMat) {
   }
 
   let phase = 0.25;
+  let hasIdlePose = false;
   const animate = (dt, speed, elapsed) => {
+    const isMoving = speed > 0.15;
+    if (!isMoving && hasIdlePose) {
+      face.rotation.x = 0.03 * Math.sin(elapsed * 1.1);
+      tailPivot.rotation.z = 0.1 * Math.sin(elapsed * 2.2);
+      return;
+    }
+
     phase = (phase + (dt * speed) / config.stride) % 1;
     const wave = phase * TAU;
-    torso.position.y = config.y + (speed > 0.15 ? config.bob * Math.cos(wave) : Math.sin(elapsed * 1.2) * 0.015);
-    torso.rotation.x = speed > 0.15 ? 0.035 * Math.sin(wave) : 0;
+    torso.position.y = config.y + (isMoving ? config.bob * Math.cos(wave) : 0);
+    torso.rotation.x = isMoving ? 0.035 * Math.sin(wave) : 0;
     torso.updateMatrix();
     face.rotation.x = 0.03 * Math.sin(elapsed * 1.1);
     tailPivot.rotation.z = 0.1 * Math.sin(elapsed * 2.2);
@@ -374,7 +395,7 @@ function buildWildQuadruped(animalKind, color, accentMat, eyeMat, glintMat) {
       const reach = (config.stride * config.stance) / 2;
       let z;
       let y = config.foot;
-      if (speed <= 0.15) {
+      if (!isMoving) {
         z = 0;
       } else if (down) {
         z = reach - p * config.stride;
@@ -408,6 +429,8 @@ function buildWildQuadruped(animalKind, color, accentMat, eyeMat, glintMat) {
       placeSegment(leg.lower, leg.knee, leg.foot, config.legWidth * 0.8, config.legWidth * 0.85);
       leg.hoof.position.copy(leg.foot);
     }
+
+    hasIdlePose = !isMoving;
   };
 
   animate(0, 0, 0);
@@ -497,7 +520,6 @@ function buildWildChicken(color, accentMat, eyeMat, glintMat) {
 export function buildAnimalPiece(type, color, materials) {
   const root = new THREE.Group();
   const eyeMat = color === 'w' ? materials.eyeW : materials.eyeB;
-  const glintMat = new THREE.MeshStandardMaterial({ color: '#eee8ce', roughness: 0.5 });
 
   const accentMap = {
     k: color === 'w' ? materials.kingW : materials.kingB,
@@ -516,17 +538,17 @@ export function buildAnimalPiece(type, color, materials) {
 
   let built;
   if (type === 'n') {
-    built = buildWildHorse(color, accentMat, eyeMat, glintMat);
+    built = buildWildHorse(color, accentMat, eyeMat, GLINT_MAT);
   } else if (type === 'k') {
-    built = buildWildQuadruped('lion', color, accentMat, eyeMat, glintMat);
+    built = buildWildQuadruped('lion', color, accentMat, eyeMat, GLINT_MAT);
   } else if (type === 'q') {
-    built = buildWildQuadruped('sheep', color, accentMat, eyeMat, glintMat);
+    built = buildWildQuadruped('sheep', color, accentMat, eyeMat, GLINT_MAT);
   } else if (type === 'r') {
-    built = buildWildQuadruped('cow', color, accentMat, eyeMat, glintMat);
+    built = buildWildQuadruped('cow', color, accentMat, eyeMat, GLINT_MAT);
   } else if (type === 'b') {
-    built = buildWildQuadruped('pig', color, accentMat, eyeMat, glintMat);
+    built = buildWildQuadruped('pig', color, accentMat, eyeMat, GLINT_MAT);
   } else {
-    built = buildWildChicken(color, accentMat, eyeMat, glintMat);
+    built = buildWildChicken(color, accentMat, eyeMat, GLINT_MAT);
   }
 
   root.add(built.rigRoot);

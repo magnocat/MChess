@@ -165,6 +165,8 @@ function createProceduralSkinTexture(type, color, palette) {
 }
 
 const TEXTURE_LOADER = new THREE.TextureLoader();
+const PENDING_SKIN_LOADS = new Map();
+const PIECE_MAT_CACHE = new Map();
 
 function getPieceSkinTexture(type, color, palette, onUpdate) {
   const paletteId = palette?.id || 'normal';
@@ -178,23 +180,44 @@ function getPieceSkinTexture(type, color, palette, onUpdate) {
     return SKIN_TEX_CACHE.get(customKey);
   }
 
-  TEXTURE_LOADER.load(
-    `./skins/${color}_${type}.png`,
-    (loadedTex) => {
-      loadedTex.magFilter = THREE.NearestFilter;
-      loadedTex.minFilter = THREE.NearestFilter;
-      loadedTex.colorSpace = THREE.SRGBColorSpace;
-      loadedTex.needsUpdate = true;
-      SKIN_TEX_CACHE.set(customKey, loadedTex);
-      if (onUpdate) onUpdate(loadedTex);
-    },
-    undefined,
-    () => {
-      // Mantém textura procedural se o arquivo não existir
-    },
-  );
+  if (!PENDING_SKIN_LOADS.has(customKey)) {
+    const callbacks = [];
+    if (onUpdate) callbacks.push(onUpdate);
+    PENDING_SKIN_LOADS.set(customKey, callbacks);
+
+    TEXTURE_LOADER.load(
+      `./skins/${color}_${type}.png`,
+      (loadedTex) => {
+        loadedTex.magFilter = THREE.NearestFilter;
+        loadedTex.minFilter = THREE.NearestFilter;
+        loadedTex.colorSpace = THREE.SRGBColorSpace;
+        loadedTex.needsUpdate = true;
+        SKIN_TEX_CACHE.set(customKey, loadedTex);
+        const listeners = PENDING_SKIN_LOADS.get(customKey) || [];
+        PENDING_SKIN_LOADS.delete(customKey);
+        for (const cb of listeners) cb(loadedTex);
+      },
+      undefined,
+      () => {
+        PENDING_SKIN_LOADS.delete(customKey);
+      },
+    );
+  } else if (onUpdate) {
+    PENDING_SKIN_LOADS.get(customKey).push(onUpdate);
+  }
 
   return fallbackTex;
+}
+
+function getCachedPieceMaterial(key, type, color, palette, roughness, metalness) {
+  if (PIECE_MAT_CACHE.has(key)) return PIECE_MAT_CACHE.get(key);
+  const mat = new THREE.MeshStandardMaterial({ roughness, metalness });
+  mat.map = getPieceSkinTexture(type, color, palette, (loaded) => {
+    mat.map = loaded;
+    mat.needsUpdate = true;
+  });
+  PIECE_MAT_CACHE.set(key, mat);
+  return mat;
 }
 
 function patchThree170Compat(root) {
@@ -211,11 +234,8 @@ function patchThree170Compat(root) {
 }
 
 function buildMinecraftHorse(color, palette, mainMat, accentMat, eyeMat) {
-  const horseMat = new THREE.MeshStandardMaterial({ roughness: 0.55, metalness: 0.1 });
-  horseMat.map = getPieceSkinTexture('n', color, palette, (loaded) => {
-    horseMat.map = loaded;
-    horseMat.needsUpdate = true;
-  });
+  const paletteId = palette?.id || 'normal';
+  const horseMat = getCachedPieceMaterial(`horse_${paletteId}_${color}`, 'n', color, palette, 0.55, 0.1);
 
   const body = new THREE.Group();
   body.position.y = 0;
@@ -291,11 +311,8 @@ function buildMinecraftHorse(color, palette, mainMat, accentMat, eyeMat) {
 }
 
 function buildMinecraftRook(color, palette, accentMat, eyeMat) {
-  const stoneMat = new THREE.MeshStandardMaterial({ roughness: 0.65, metalness: 0.15 });
-  stoneMat.map = getPieceSkinTexture('r', color, palette, (loaded) => {
-    stoneMat.map = loaded;
-    stoneMat.needsUpdate = true;
-  });
+  const paletteId = palette?.id || 'normal';
+  const stoneMat = getCachedPieceMaterial(`rook_${paletteId}_${color}`, 'r', color, palette, 0.65, 0.15);
 
   const body = new THREE.Group();
   body.position.y = 0;

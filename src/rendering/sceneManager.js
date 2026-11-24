@@ -153,17 +153,22 @@ export class SceneManager {
     const lightCol = this.colorPalette?.boardLight ?? defaultLight;
     const darkCol = this.colorPalette?.boardDark ?? defaultDark;
     const sqGeo = new THREE.BoxGeometry(1, 0.14, 1);
+    const lightMat = new THREE.MeshStandardMaterial({
+      color: lightCol,
+      roughness: 0.55,
+      metalness: 0.08,
+    });
+    const darkMat = new THREE.MeshStandardMaterial({
+      color: darkCol,
+      roughness: 0.55,
+      metalness: 0.08,
+    });
 
     for (let rank = 1; rank <= 8; rank += 1) {
       for (let f = 0; f < 8; f += 1) {
         const square = `${FILES[f]}${rank}`;
         const isLight = (f + rank) % 2 === 1;
-        const mat = new THREE.MeshStandardMaterial({
-          color: isLight ? lightCol : darkCol,
-          roughness: 0.55,
-          metalness: 0.08,
-        });
-        const mesh = new THREE.Mesh(sqGeo, mat);
+        const mesh = new THREE.Mesh(sqGeo, isLight ? lightMat : darkMat);
         const pos = squareToWorld(square);
         mesh.position.set(pos.x, -0.07, pos.z);
         mesh.receiveShadow = true;
@@ -183,27 +188,55 @@ export class SceneManager {
   }
 
   /**
-   * Sincroniza as peças 3D com o tabuleiro oficial do ChessEngine.
+   * Sincroniza as peças 3D com o tabuleiro oficial do ChessEngine,
+   * reutilizando malhas existentes para evitar vazamento de memória WebGL.
    */
   syncBoard(engine) {
-    while (this.piecesGroup.children.length > 0) {
-      this.piecesGroup.remove(this.piecesGroup.children[0]);
-    }
-    this.pieceMeshes.clear();
-
     const useAnimals = this.animalsMode && !this.lowQuality;
     const useSkinview = !useAnimals && this.animatedMode && !this.lowQuality;
+    const renderMode = useAnimals ? 'animals' : useSkinview ? 'skinview' : 'classic';
+    const paletteId = this.colorPalette?.id || 'normal';
+    const canReuse = this._activeRenderMode === renderMode && this._activePaletteId === paletteId;
+
+    const pool = new Map();
+    if (canReuse) {
+      for (const existing of this.piecesGroup.children) {
+        const key = `${existing.userData?.color}_${existing.userData?.type}`;
+        if (!pool.has(key)) pool.set(key, []);
+        pool.get(key).push(existing);
+      }
+    }
+    this.piecesGroup.clear();
+    this.pieceMeshes.clear();
+    this._activeRenderMode = renderMode;
+    this._activePaletteId = paletteId;
+
     const board = engine.getBoard();
     for (let r = 0; r < 8; r += 1) {
       for (let c = 0; c < 8; c += 1) {
         const cell = board[r][c];
         if (!cell) continue;
         const square = `${FILES[c]}${8 - r}`;
-        const piece = useAnimals
-          ? buildAnimalPiece(cell.type, cell.color, this.pieceMaterials)
-          : useSkinview
-            ? buildSkinviewPiece(cell.type, cell.color, this.colorPalette, this.pieceMaterials)
-            : buildLivingPiece(cell.type, cell.color, this.pieceMaterials);
+        const key = `${cell.color}_${cell.type}`;
+        const bucket = pool.get(key);
+        let piece = bucket && bucket.length > 0 ? bucket.pop() : null;
+
+        if (!piece) {
+          piece = useAnimals
+            ? buildAnimalPiece(cell.type, cell.color, this.pieceMaterials)
+            : useSkinview
+              ? buildSkinviewPiece(cell.type, cell.color, this.colorPalette, this.pieceMaterials)
+              : buildLivingPiece(cell.type, cell.color, this.pieceMaterials);
+        } else {
+          piece.scale.set(1, 1, 1);
+          piece.rotation.set(0, cell.color === 'w' ? Math.PI : 0, 0);
+          piece.userData.state = 'idle';
+          if (piece.userData.parts?.body) {
+            piece.userData.parts.body.rotation.set(0, 0, 0);
+            piece.userData.parts.body.scale.set(1, 1, 1);
+          }
+        }
+
         const pos = squareToWorld(square);
         piece.position.set(pos.x, 0, pos.z);
         piece.userData.square = square;

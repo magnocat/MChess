@@ -23,6 +23,10 @@ Desenvolvido com foco em leveza, segurança, acessibilidade e padrão de escrita
 | Recurso | Descrição |
 | :--- | :--- |
 | **Peças Vivas (Wizard's Chess)** | Personagens 3D articulados que respiram, caminham, tremem de medo, lutam e caem na captura. |
+| **Modo Animado (Skinview3D)** | Personagens estilo Minecraft com skins 64×64 PNG, caminhada no plano, Cavalo 4 patas e Torre de pedra. |
+| **Animals Game (Rigs IK)** | Animais articulados por cinemática inversa (Leão, Ovelha, Touro, Porco, Cavalo e Galinha) na Campina Animal. |
+| **Finalizações Battle Chess 3D** | Múltiplas coreografias aleatórias de captura (3 variações por peça atacante) no Modo Especial. |
+| **Modo Aprendizado 2D** | Vista de cima com replay, análise de lances, aberturas, puzzles táticos e ensino interativo das peças. |
 | **Cenários Procedurais** | Mundos gerados por semente (`seed`): Floresta e Lago, Espaço Sideral, Castelo, Cristais, Neve e Deserto. |
 | **IA Adaptativa** | Motor Minimax Alpha-Beta que evolui conforme o Elo e as aberturas registradas do jogador. |
 | **Multiplayer 1 vs 1** | Convites diretos por link (`?sala=...`) via WebRTC P2P (`PeerJS`) e modo Local no mesmo aparelho. |

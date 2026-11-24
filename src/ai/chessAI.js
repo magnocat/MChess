@@ -27,13 +27,17 @@ const CENTER_BONUS = [
  * @param {boolean} aggressiveHuman
  */
 function evaluateBoard(chess, aggressiveHuman = false) {
-  if (chess.isCheckmate()) {
-    return chess.turn() === 'w' ? -99999 : 99999;
-  }
-  if (chess.isDraw()) {
+  if (chess.isGameOver()) {
+    if (chess.isCheckmate()) {
+      return chess.turn() === 'w' ? -99999 : 99999;
+    }
     return 0;
   }
 
+  return evaluateMaterialAndPosition(chess, aggressiveHuman);
+}
+
+function evaluateMaterialAndPosition(chess, aggressiveHuman = false) {
   const board = chess.board();
   let total = 0;
 
@@ -55,27 +59,45 @@ function evaluateBoard(chess, aggressiveHuman = false) {
 
 function orderMoves(moves) {
   return moves.sort((a, b) => {
-    const scoreA = (a.captured ? 10 : 0) + (a.san.includes('+') ? 5 : 0);
-    const scoreB = (b.captured ? 10 : 0) + (b.san.includes('+') ? 5 : 0);
-    return scoreB - scoreA;
+    const capA = a.captured ? (PIECE_VALUES[a.captured] || 100) - (PIECE_VALUES[a.piece] || 0) * 0.1 : 0;
+    const capB = b.captured ? (PIECE_VALUES[b.captured] || 100) - (PIECE_VALUES[b.piece] || 0) * 0.1 : 0;
+    const promoA = a.promotion ? 800 : 0;
+    const promoB = b.promotion ? 800 : 0;
+    return capB + promoB - (capA + promoA);
   });
 }
 
-function minimax(chess, depth, alpha, beta, maximizing, aggressiveHuman) {
-  if (depth === 0 || chess.isGameOver()) {
-    return evaluateBoard(chess, aggressiveHuman);
+function minimax(chess, depth, alpha, beta, maximizing, aggressiveHuman, state) {
+  state.nodes += 1;
+  if ((state.nodes & 63) === 0 && Date.now() >= state.deadline) {
+    state.aborted = true;
+    return evaluateMaterialAndPosition(chess, aggressiveHuman);
+  }
+
+  if (depth === 0) {
+    if (chess.isCheck()) {
+      return evaluateBoard(chess, aggressiveHuman);
+    }
+    return evaluateMaterialAndPosition(chess, aggressiveHuman);
   }
 
   const moves = orderMoves(chess.moves({ verbose: true }));
+  if (moves.length === 0) {
+    if (chess.isCheck()) {
+      return maximizing ? -99999 - depth : 99999 + depth;
+    }
+    return 0;
+  }
+
   if (maximizing) {
     let maxEval = -Infinity;
     for (const move of moves) {
       chess.move(move);
-      const ev = minimax(chess, depth - 1, alpha, beta, false, aggressiveHuman);
+      const ev = minimax(chess, depth - 1, alpha, beta, false, aggressiveHuman, state);
       chess.undo();
       if (ev > maxEval) maxEval = ev;
       if (ev > alpha) alpha = ev;
-      if (beta <= alpha) break;
+      if (beta <= alpha || state.aborted) break;
     }
     return maxEval;
   }
@@ -83,17 +105,18 @@ function minimax(chess, depth, alpha, beta, maximizing, aggressiveHuman) {
   let minEval = Infinity;
   for (const move of moves) {
     chess.move(move);
-    const ev = minimax(chess, depth - 1, alpha, beta, true, aggressiveHuman);
+    const ev = minimax(chess, depth - 1, alpha, beta, true, aggressiveHuman, state);
     chess.undo();
     if (ev < minEval) minEval = ev;
     if (ev < beta) beta = ev;
-    if (beta <= alpha) break;
+    if (beta <= alpha || state.aborted) break;
   }
   return minEval;
 }
 
 /**
  * Escolhe o próximo lance legal da IA usando Minimax Alpha-Beta e o perfil adaptativo.
+ * Limita o tempo de busca para evitar travamentos em celulares e PCs simples.
  * @param {string} fen
  * @param {object} adaptiveConfig
  * @returns {object|null}
@@ -111,6 +134,7 @@ export function chooseAdaptiveMove(fen, adaptiveConfig = { depth: 2, mistakeChan
 
   const maximizing = chess.turn() === 'w';
   const depth = Math.max(1, Math.min(3, adaptiveConfig.depth || 2));
+  const state = { nodes: 0, deadline: Date.now() + 260, aborted: false };
   const scored = [];
 
   for (const move of legalMoves) {
@@ -122,9 +146,11 @@ export function chooseAdaptiveMove(fen, adaptiveConfig = { depth: 2, mistakeChan
       Infinity,
       !maximizing,
       Boolean(adaptiveConfig.aggressiveHuman),
+      state,
     );
     chess.undo();
     scored.push({ move, score });
+    if (state.aborted) break;
   }
 
   scored.sort((a, b) => (maximizing ? b.score - a.score : a.score - b.score));

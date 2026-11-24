@@ -20,10 +20,19 @@ Quando um perfil de daltonismo diferente de `normal` é ativado, o jogo aplica c
 - Cada peça exibe um balão com o nome (`Rei`, `Rainha`, `Bispo`, `Cavalo`, `Torre` ou `Peão`) acima da cabeça.
 - Ao alternar para a câmera **Topo**, os nomes ficam ocultos para manter o tabuleiro limpo.
 
-## 3. Modo Especial (Finalizações) e Modo Leve
+## 3. Modo Animado, Animals Game e Finalizações 3D
 
-- O **Modo Especial** executa animações únicas de captura para cada combinação de peça atacante e defensora (como o coice do Cavalo na Rainha ou o salto esmagador no Peão).
-- O **Modo Leve** desativa partículas, sombras pesadas, Modo Especial e Modo Animado para manter o desempenho em aparelhos simples.
+- **Modo Animado (`Skinview3D`):** Renderiza Rei, Rainha, Bispo e Peão como personagens articulados com caminhada ou voo no plano do tabuleiro. O Cavalo usa galope em 4 patas e a Torre usa marcha em tijolos de pedra. As peças ficam apoiadas direto no tabuleiro com um anel fino na base.
+- **Modo Animals Game (Rigs IK):** Substitui as peças por animais com cinemática inversa (IK) inspirados no Wild Run 3D, no cenário **Campina Animal**:
+  - **Rei (`k`):** Leão com juba, coroa e capa.
+  - **Rainha (`q`):** Ovelha com tiara e capa.
+  - **Torre (`r`):** Touro/Vaca com chifres e ameias.
+  - **Bispo (`b`):** Porco com mitra e capa clerical.
+  - **Cavalo (`n`):** Cavalo pinto com sela e galope IK.
+  - **Peão (`p`):** Galinha com crista, barbela e bater de asas.
+- **Modo Especial (Finalizações Battle Chess 3D):** Executa coreografias aleatórias de captura (3 variações por peça atacante: Peão, Cavalo, Torre, Bispo, Rainha e Rei) compatíveis com todos os modos visuais.
+- **Modo Aprendizado 2D (Vista de Cima):** Oferece replay de partidas, análise de lances, biblioteca de aberturas, puzzles táticos e ensino interativo do movimento de cada peça.
+- **Modo Leve:** Desativa partículas, sombras, Modo Especial, Modo Animado e Animals Game para manter alto FPS em celulares e PCs simples.
 
 ## 4. Visualizador Stand Alone (Painel ADMIN)
 
