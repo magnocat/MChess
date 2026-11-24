@@ -199,16 +199,20 @@ export class LearningView {
 
     const sideCol = this.el('div', '', 'learning-side-col');
 
-    if (this.activeTab === 'replay') {
-      this.renderReplayTab(board2d, evalFill, sideCol);
-    } else if (this.activeTab === 'puzzles') {
-      this.renderPuzzlesTab(board2d, evalFill, sideCol);
-    } else {
-      this.renderGuideTab(board2d, evalFill, sideCol);
-    }
-
     body.append(boardCol, sideCol);
     this.overlay.append(header, body);
+
+    try {
+      if (this.activeTab === 'replay') {
+        this.renderReplayTab(board2d, evalFill, sideCol);
+      } else if (this.activeTab === 'puzzles') {
+        this.renderPuzzlesTab(board2d, evalFill, sideCol);
+      } else {
+        this.renderGuideTab(board2d, evalFill, sideCol);
+      }
+    } catch (err) {
+      sideCol.append(this.el('p', `Erro ao renderizar aba: ${err.message}`));
+    }
   }
 
   renderReplayTab(board2d, evalFill, sideCol) {
@@ -369,8 +373,13 @@ export class LearningView {
 
   renderGuideTab(board2d, evalFill, sideCol) {
     evalFill.style.height = '50%';
-    const chess = new Chess('8/8/8/8/8/8/8/8 w - - 0 1');
-    chess.put({ type: this.guidePieceType, color: 'w' }, 'd4');
+    const chess =
+      this.guidePieceType === 'k'
+        ? new Chess('7k/8/8/8/3K4/8/8/8 w - - 0 1')
+        : new Chess('7k/8/8/8/8/8/8/K7 w - - 0 1');
+    if (this.guidePieceType !== 'k') {
+      chess.put({ type: this.guidePieceType, color: 'w' }, 'd4');
+    }
     this.selectedSq = 'd4';
     this.legalTargets = chess.moves({ square: 'd4', verbose: true }).map((m) => m.to);
     this.renderBoard2D(board2d, chess, {});

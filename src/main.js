@@ -98,6 +98,8 @@ async function bootstrap() {
   if (specialModeChk) specialModeChk.checked = sceneManager.specialMode;
   const animatedModeChk = document.getElementById('chk-animated-mode');
   if (animatedModeChk) animatedModeChk.checked = sceneManager.animatedMode;
+  const animalsModeChk = document.getElementById('chk-animals-mode');
+  if (animalsModeChk) animalsModeChk.checked = sceneManager.animalsMode;
 
   const p2p = new P2PManager({
     onStatus: (msg, url) => {
@@ -572,6 +574,10 @@ async function bootstrap() {
         animatedModeChk.checked = false;
         sceneManager.setAnimatedMode(false, gameState.engine);
       }
+      if (animalsModeChk) {
+        animalsModeChk.checked = false;
+        sceneManager.setAnimalsMode(false, gameState.engine);
+      }
     }
   });
   if (specialModeChk) {
@@ -582,11 +588,26 @@ async function bootstrap() {
   }
   if (animatedModeChk) {
     animatedModeChk.addEventListener('change', (ev) => {
+      if (ev.target.checked && animalsModeChk) animalsModeChk.checked = false;
       sceneManager.setAnimatedMode(ev.target.checked, gameState.engine);
       showSubtitle(
         ev.target.checked
           ? 'Modo Animado (Skinview3D) ativado: peças com animação fluida!'
           : 'Modo Animado desativado.',
+      );
+    });
+  }
+  if (animalsModeChk) {
+    animalsModeChk.addEventListener('change', (ev) => {
+      if (ev.target.checked && animatedModeChk) animatedModeChk.checked = false;
+      sceneManager.setAnimalsMode(ev.target.checked, gameState.engine);
+      document.getElementById('biome-badge').textContent = ev.target.checked
+        ? 'Bioma: Animals Game (Prado Wild Run)'
+        : `Bioma: ${sceneManager.loadScenario(gameState.seed).name} (#${gameState.seed})`;
+      showSubtitle(
+        ev.target.checked
+          ? 'Animals Game ativado: animais articulados com IK no prado Wild Run!'
+          : 'Animals Game desativado.',
       );
     });
   }

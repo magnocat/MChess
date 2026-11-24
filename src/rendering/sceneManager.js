@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { applyPiecePalette, buildLivingPiece, createPieceMaterials } from '../characters/pieceBuilder.js';
 import { buildSkinviewPiece } from '../characters/skinviewPieceBuilder.js';
+import { buildAnimalPiece } from '../characters/animalsPieceBuilder.js';
 import { PieceAnimator } from '../characters/pieceAnimator.js';
 import { getBiomeForSeed, ProceduralWorld } from './proceduralWorld.js';
 
@@ -26,6 +27,7 @@ export class SceneManager {
     this.lowQuality = /Mobi|Android/i.test(navigator.userAgent);
     this.specialMode = !this.lowQuality;
     this.animatedMode = false;
+    this.animalsMode = false;
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(
@@ -120,6 +122,16 @@ export class SceneManager {
 
   setAnimatedMode(enabled, engine = null) {
     this.animatedMode = Boolean(enabled);
+    if (this.animatedMode) this.animalsMode = false;
+    if (engine) {
+      this.syncBoard(engine);
+    }
+  }
+
+  setAnimalsMode(enabled, engine = null) {
+    this.animalsMode = Boolean(enabled);
+    if (this.animalsMode) this.animatedMode = false;
+    this.loadScenario(this.currentSeed);
     if (engine) {
       this.syncBoard(engine);
     }
@@ -136,8 +148,10 @@ export class SceneManager {
     this.squareMeshes.clear();
 
     const biome = getBiomeForSeed(seed);
-    const lightCol = this.colorPalette?.boardLight ?? biome.boardLight;
-    const darkCol = this.colorPalette?.boardDark ?? biome.boardDark;
+    const defaultLight = this.animalsMode ? 0xb4a47a : biome.boardLight;
+    const defaultDark = this.animalsMode ? 0x516f43 : biome.boardDark;
+    const lightCol = this.colorPalette?.boardLight ?? defaultLight;
+    const darkCol = this.colorPalette?.boardDark ?? defaultDark;
     const sqGeo = new THREE.BoxGeometry(1, 0.14, 1);
 
     for (let rank = 1; rank <= 8; rank += 1) {
@@ -162,6 +176,9 @@ export class SceneManager {
 
   loadScenario(seed) {
     this.buildBoardSquares(seed);
+    if (this.animalsMode) {
+      return this.world.buildAnimalsMeadow(this.lowQuality);
+    }
     return this.world.build(seed, this.lowQuality);
   }
 
@@ -174,16 +191,19 @@ export class SceneManager {
     }
     this.pieceMeshes.clear();
 
-    const useSkinview = this.animatedMode && !this.lowQuality;
+    const useAnimals = this.animalsMode && !this.lowQuality;
+    const useSkinview = !useAnimals && this.animatedMode && !this.lowQuality;
     const board = engine.getBoard();
     for (let r = 0; r < 8; r += 1) {
       for (let c = 0; c < 8; c += 1) {
         const cell = board[r][c];
         if (!cell) continue;
         const square = `${FILES[c]}${8 - r}`;
-        const piece = useSkinview
-          ? buildSkinviewPiece(cell.type, cell.color, this.colorPalette, this.pieceMaterials)
-          : buildLivingPiece(cell.type, cell.color, this.pieceMaterials);
+        const piece = useAnimals
+          ? buildAnimalPiece(cell.type, cell.color, this.pieceMaterials)
+          : useSkinview
+            ? buildSkinviewPiece(cell.type, cell.color, this.colorPalette, this.pieceMaterials)
+            : buildLivingPiece(cell.type, cell.color, this.pieceMaterials);
         const pos = squareToWorld(square);
         piece.position.set(pos.x, 0, pos.z);
         piece.userData.square = square;

@@ -36,7 +36,29 @@ export class PieceAnimator {
     const dt = Math.min(0.05, Math.max(0.001, deltaSec));
     for (const piece of pieces) {
       if (!piece || !piece.userData || !piece.userData.parts) continue;
-      const { type, state, phase, parts, isSkinview, skinPlayer, isMinecraftHorse, isMinecraftRook } = piece.userData;
+      const {
+        type,
+        state,
+        phase,
+        parts,
+        isSkinview,
+        skinPlayer,
+        isMinecraftHorse,
+        isMinecraftRook,
+        isAnimal,
+        animateAnimal,
+      } = piece.userData;
+
+      if (isAnimal && animateAnimal) {
+        const speed = state === 'moving' ? 8.5 : state === 'attacking' ? 12 : 0;
+        animateAnimal(dt, speed, elapsedSec);
+        if (state === 'scared') {
+          parts.body.position.x = Math.sin(elapsedSec * 18 + phase) * 0.012;
+        } else {
+          parts.body.position.x = 0;
+        }
+        continue;
+      }
 
       if (isMinecraftHorse) {
         if (state === 'moving') {

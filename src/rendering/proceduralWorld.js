@@ -382,6 +382,82 @@ export class ProceduralWorld {
     this.group.add(cactus);
   }
 
+  buildAnimalsMeadow(lowQuality = false) {
+    this.clear();
+    const skyHex = 0xbcd5d5;
+    this.scene.background = new THREE.Color(skyHex);
+    this.scene.fog = new THREE.Fog(skyHex, 24, 62);
+
+    const frame = new THREE.Mesh(
+      new THREE.BoxGeometry(8.8, 0.35, 8.8),
+      new THREE.MeshStandardMaterial({ color: 0x6b503a, roughness: 0.85 }),
+    );
+    frame.position.y = -0.22;
+    frame.receiveShadow = true;
+    this.group.add(frame);
+
+    const terrain = new THREE.Mesh(
+      new THREE.CylinderGeometry(24, 26, 0.8, 32),
+      new THREE.MeshStandardMaterial({ color: 0x879752, roughness: 1 }),
+    );
+    terrain.position.y = -0.78;
+    terrain.receiveShadow = true;
+    this.group.add(terrain);
+
+    const rand = mulberry32(7241);
+    const grassColors = [0x879752, 0x8d9a59, 0x929e5c, 0x7e914d, 0xa1a567];
+    const barkMat = new THREE.MeshStandardMaterial({ color: 0x6b503a, roughness: 1 });
+    const leafMat = new THREE.MeshStandardMaterial({ color: 0x516f43, roughness: 1 });
+    const leafLightMat = new THREE.MeshStandardMaterial({ color: 0x6e8248, roughness: 1 });
+    const rockMat = new THREE.MeshStandardMaterial({ color: 0x8b9280, roughness: 1 });
+    const cubeGeo = new THREE.BoxGeometry(1, 1, 1);
+
+    const propCount = lowQuality ? 16 : 36;
+    for (let i = 0; i < propCount; i += 1) {
+      const ang = (i / propCount) * Math.PI * 2 + (rand() - 0.5) * 0.25;
+      const dist = 6.8 + rand() * 12;
+      const x = Math.cos(ang) * dist;
+      const z = Math.sin(ang) * dist;
+
+      // Degrau de grama voxel
+      const hill = new THREE.Mesh(
+        cubeGeo,
+        new THREE.MeshStandardMaterial({ color: grassColors[i % grassColors.length], roughness: 1 }),
+      );
+      const h = 0.5 + Math.floor(rand() * 3) * 0.5;
+      hill.scale.set(1.8 + rand() * 1.4, h, 1.8 + rand() * 1.4);
+      hill.position.set(x, -0.4 + h * 0.5, z);
+      hill.receiveShadow = true;
+      this.group.add(hill);
+
+      if (i % 3 === 0) {
+        // Árvore voxel estilo Wild Run 3D
+        const trunk = new THREE.Mesh(cubeGeo, barkMat);
+        trunk.scale.set(0.45, 1.8 + rand() * 0.8, 0.45);
+        trunk.position.set(x, -0.4 + h + 0.9, z);
+        trunk.castShadow = true;
+        const crown = new THREE.Mesh(cubeGeo, i % 2 === 0 ? leafMat : leafLightMat);
+        crown.scale.set(1.7, 1.3, 1.7);
+        crown.position.set(x, -0.4 + h + 2.1, z);
+        crown.castShadow = true;
+        this.group.add(trunk, crown);
+      } else if (i % 3 === 1) {
+        const rock = new THREE.Mesh(cubeGeo, rockMat);
+        rock.scale.set(0.7 + rand() * 0.6, 0.45 + rand() * 0.4, 0.7 + rand() * 0.6);
+        rock.position.set(x, -0.4 + h + 0.22, z);
+        rock.castShadow = true;
+        this.group.add(rock);
+      }
+    }
+
+    return {
+      id: 'animals',
+      name: 'Animals Game (Prado Wild Run)',
+      boardLight: 0xb4a47a,
+      boardDark: 0x516f43,
+    };
+  }
+
   update(elapsedSec) {
     if (this.particles) {
       this.particles.rotation.y = elapsedSec * 0.03;
