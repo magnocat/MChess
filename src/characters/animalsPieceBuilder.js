@@ -7,7 +7,6 @@ const lerp = THREE.MathUtils.lerp;
 const smooth = (t) => t * t * (3 - 2 * t);
 
 const CUBE_GEO = new THREE.BoxGeometry(1, 1, 1);
-const BASE_GEO = new THREE.CylinderGeometry(0.36, 0.4, 0.1, 16);
 const RIM_GEO = new THREE.TorusGeometry(0.39, 0.022, 8, 24);
 const UNIT_Y = new THREE.Vector3(0, 1, 0);
 const DIR_VEC = new THREE.Vector3();
@@ -497,7 +496,6 @@ function buildWildChicken(color, accentMat, eyeMat, glintMat) {
  */
 export function buildAnimalPiece(type, color, materials) {
   const root = new THREE.Group();
-  const mainMat = materials[color];
   const eyeMat = color === 'w' ? materials.eyeW : materials.eyeB;
   const glintMat = new THREE.MeshStandardMaterial({ color: '#eee8ce', roughness: 0.5 });
 
@@ -511,15 +509,9 @@ export function buildAnimalPiece(type, color, materials) {
   };
   const accentMat = accentMap[type] || materials.wAccent;
 
-  const base = new THREE.Mesh(BASE_GEO, mainMat);
-  base.position.y = 0.05;
-  base.castShadow = true;
-  base.receiveShadow = true;
-  root.add(base);
-
   const baseRim = new THREE.Mesh(RIM_GEO, accentMat);
   baseRim.rotation.x = Math.PI / 2;
-  baseRim.position.y = 0.025;
+  baseRim.position.y = 0.02;
   root.add(baseRim);
 
   let built;

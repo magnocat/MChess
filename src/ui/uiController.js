@@ -396,7 +396,17 @@ export class UIController {
     });
   }
 
-  openAdminModal({ adminAuth, scoreboard, profileManager, adminAiStats, onStartAiVsAi, onResetAll }) {
+  openAdminModal({
+    adminAuth,
+    scoreboard,
+    profileManager,
+    adminAiStats,
+    adminBotEnabled = false,
+    onToggleAdminBot,
+    onAdminLogout,
+    onStartAiVsAi,
+    onResetAll,
+  }) {
     this.openModal('Acesso Exclusivo ADMIN', (body) => {
       if (!adminAuth.authenticated) {
         const msg = this.el('p', 'Informe a senha de administrador configurada.');
@@ -413,6 +423,9 @@ export class UIController {
               scoreboard,
               profileManager,
               adminAiStats,
+              adminBotEnabled,
+              onToggleAdminBot,
+              onAdminLogout,
               onStartAiVsAi,
               onResetAll,
             });
@@ -425,6 +438,18 @@ export class UIController {
       }
 
       const status = this.el('p', 'Sessão ADMIN ativa e verificada.');
+
+      const botCard = this.el('div', '', 'card');
+      botCard.append(this.el('h2', 'BOT Assistente (Privado ADMIN)'));
+      const botRow = this.el('label', '', 'checkbox-row');
+      const botChk = this.el('input');
+      botChk.type = 'checkbox';
+      botChk.checked = Boolean(adminBotEnabled);
+      botChk.addEventListener('change', () => {
+        if (onToggleAdminBot) onToggleAdminBot(botChk.checked);
+      });
+      botRow.append(botChk, this.el('span', 'Ativar BOT Assistente (Auto-Jogada Admin)'));
+      botCard.append(botRow);
 
       const aiCard = this.el('div', '', 'card');
       aiCard.append(
@@ -451,6 +476,9 @@ export class UIController {
               scoreboard,
               profileManager,
               adminAiStats,
+              adminBotEnabled: botChk.checked,
+              onToggleAdminBot,
+              onAdminLogout,
               onStartAiVsAi,
               onResetAll,
             });
@@ -495,11 +523,13 @@ export class UIController {
       const btnLogout = this.el('button', 'Sair do Modo ADMIN');
       btnLogout.addEventListener('click', () => {
         adminAuth.logout();
+        if (onAdminLogout) onAdminLogout();
         this.closeModal();
       });
 
       body.append(
         status,
+        botCard,
         btnStudio,
         aiCard,
         agentLink,

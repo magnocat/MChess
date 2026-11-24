@@ -3,7 +3,6 @@ import { PlayerObject } from 'skinview3d';
 import { createPieceLabelSprite } from './pieceBuilder.js';
 
 const SKIN_TEX_CACHE = new Map();
-const BASE_GEO = new THREE.CylinderGeometry(0.36, 0.4, 0.12, 16);
 const RIM_GEO = new THREE.TorusGeometry(0.39, 0.022, 8, 24);
 
 function hexToCss(hex) {
@@ -219,7 +218,7 @@ function buildMinecraftHorse(color, palette, mainMat, accentMat, eyeMat) {
   });
 
   const body = new THREE.Group();
-  body.position.y = 0.12;
+  body.position.y = 0;
 
   const torso = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.28, 0.58), horseMat);
   torso.position.set(0, 0.34, 0);
@@ -299,7 +298,7 @@ function buildMinecraftRook(color, palette, accentMat, eyeMat) {
   });
 
   const body = new THREE.Group();
-  body.position.y = 0.12;
+  body.position.y = 0;
 
   const torso = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.62, 0.48), stoneMat);
   torso.position.y = 0.31;
@@ -353,13 +352,9 @@ export function buildSkinviewPiece(type, color, palette, materials) {
   const accentMat = getAccentMaterial(type, color, materials);
   const eyeMat = color === 'w' ? materials.eyeW : materials.eyeB;
 
-  const base = new THREE.Mesh(BASE_GEO, mainMat);
-  base.position.y = 0.06;
-  root.add(base);
-
   const baseRim = new THREE.Mesh(RIM_GEO, accentMat);
   baseRim.rotation.x = Math.PI / 2;
-  baseRim.position.y = 0.025;
+  baseRim.position.y = 0.02;
   root.add(baseRim);
 
   if (type === 'n') {
@@ -470,7 +465,7 @@ export function buildSkinviewPiece(type, color, palette, materials) {
 
   const scaleFactor = type === 'k' ? 0.036 : type === 'q' ? 0.034 : type === 'p' ? 0.027 : 0.031;
   player.scale.setScalar(scaleFactor);
-  player.position.y = 0.54 * (scaleFactor / 0.031);
+  player.position.y = 16 * scaleFactor;
   root.add(player);
 
   // Face das peças brancas olha para -Z e pretas para +Z
@@ -488,6 +483,7 @@ export function buildSkinviewPiece(type, color, palette, materials) {
     labelSprite,
     isSkinview: true,
     skinPlayer: player,
+    basePlayerY: player.position.y,
     parts: {
       body: player.skin.body,
       head: player.skin.head,

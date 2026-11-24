@@ -85,6 +85,17 @@ async function bootstrap() {
     }
   };
 
+  let adminAssistantBotEnabled = false;
+  const isAdminBotActive = () => adminAuth.authenticated && adminAssistantBotEnabled;
+
+  const OUTCOME_LABELS_PT = {
+    insufficient_material: 'material insuficiente',
+    stalemate: 'afogamento',
+    threefold_repetition: 'repetição tripla',
+    fifty_move_rule: 'regra dos 50 lances',
+    draw: 'empate',
+  };
+
   let selectedSquare = null;
   let legalMovesForSelected = [];
 
@@ -126,6 +137,9 @@ async function bootstrap() {
       });
       ui.closeModal();
       updateHud();
+      if (isAdminBotActive() && gameState.engine.getTurn() === gameState.humanColor) {
+        setTimeout(runAdminBotTurn, 480);
+      }
     },
     onMove: async ({ from, to, promotion }) => {
       await applyMove(from, to, promotion, true);
@@ -155,10 +169,11 @@ async function bootstrap() {
     const status = gameState.engine.getStatus();
     const statusBadge = document.getElementById('status-badge');
     if (status.isGameOver) {
+      const outcomeLabel = OUTCOME_LABELS_PT[status.outcome] || status.outcome;
       statusBadge.textContent =
         status.outcome === 'checkmate'
           ? `Xeque-mate! ${status.winner === 'w' ? 'Brancas' : 'Pretas'} venceram`
-          : `Empate (${status.outcome})`;
+          : `Empate (${outcomeLabel})`;
     } else if (status.inCheck) {
       statusBadge.textContent = `XEQUE! Turno: ${status.turn === 'w' ? 'Brancas' : 'Pretas'}`;
     } else {
@@ -306,6 +321,12 @@ async function bootstrap() {
       setTimeout(runAiTurn, 420);
     } else if (gameState.mode === '1vIA' && status.turn !== gameState.humanColor) {
       setTimeout(runAiTurn, 420);
+    } else if (
+      isAdminBotActive() &&
+      (gameState.mode === '1vIA' || gameState.mode === '1v1-local' || gameState.mode === '1v1-p2p') &&
+      status.turn === gameState.humanColor
+    ) {
+      setTimeout(runAdminBotTurn, 420);
     }
 
     updateHud();
@@ -317,6 +338,21 @@ async function bootstrap() {
     const aiMove = chooseAdaptiveMove(gameState.engine.getFen(), cfg);
     if (aiMove) {
       await applyMove(aiMove.from, aiMove.to, aiMove.promotion || 'q', true);
+    }
+  }
+
+  async function runAdminBotTurn() {
+    if (!isAdminBotActive()) return;
+    if (gameState.engine.isGameOver() || sceneManager.isAnimatingMove) return;
+    if (gameState.mode !== '1vIA' && gameState.mode !== '1v1-local' && gameState.mode !== '1v1-p2p') return;
+    if (gameState.engine.getTurn() !== gameState.humanColor) return;
+    const aiMove = chooseAdaptiveMove(gameState.engine.getFen(), {
+      depth: 3,
+      randomFactor: 0,
+      mistakeChance: 0,
+    });
+    if (aiMove) {
+      await applyMove(aiMove.from, aiMove.to, aiMove.promotion || 'q', false);
     }
   }
 
@@ -366,6 +402,12 @@ async function bootstrap() {
     loadWorldAndSync();
     if (gameState.mode === '1vIA' && gameState.humanColor === 'b') {
       setTimeout(runAiTurn, 500);
+    } else if (
+      isAdminBotActive() &&
+      (gameState.mode === '1vIA' || gameState.mode === '1v1-local' || gameState.mode === '1v1-p2p') &&
+      gameState.engine.getTurn() === gameState.humanColor
+    ) {
+      setTimeout(runAdminBotTurn, 500);
     }
   }
 
@@ -544,6 +586,21 @@ async function bootstrap() {
       scoreboard,
       profileManager,
       adminAiStats,
+      adminBotEnabled: adminAssistantBotEnabled,
+      onToggleAdminBot: (enabled) => {
+        adminAssistantBotEnabled = Boolean(adminAuth.authenticated && enabled);
+        if (
+          isAdminBotActive() &&
+          !gameState.engine.isGameOver() &&
+          (gameState.mode === '1vIA' || gameState.mode === '1v1-local' || gameState.mode === '1v1-p2p') &&
+          gameState.engine.getTurn() === gameState.humanColor
+        ) {
+          setTimeout(runAdminBotTurn, 350);
+        }
+      },
+      onAdminLogout: () => {
+        adminAssistantBotEnabled = false;
+      },
       onStartAiVsAi: () => {
         gameState.startNew({
           mode: 'IAvIA',
